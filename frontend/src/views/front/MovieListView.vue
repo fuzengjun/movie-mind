@@ -1,5 +1,5 @@
 <template>
-  <section class="space-y-8">
+  <section class="space-y-8 pt-20">
     <div class="surface-card flex flex-col gap-5 p-6 md:flex-row md:items-end md:justify-between">
       <div>
         <p class="section-kicker text-xs">Movie Library</p>

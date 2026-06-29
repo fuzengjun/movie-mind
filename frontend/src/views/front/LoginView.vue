@@ -1,5 +1,5 @@
 <template>
-  <section class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center min-h-[480px] pt-12 md:pt-20">
+  <section class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center min-h-[480px] pt-24 md:pt-28">
     <!-- 左侧标题与描述 -->
     <div class="space-y-6 text-left">
       <p class="section-kicker text-[10px] tracking-widest uppercase">Sign In</p>

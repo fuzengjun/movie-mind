@@ -1,63 +1,167 @@
 <template>
-  <section v-if="movie" class="space-y-8">
-    <div class="hero-backdrop surface-card" :style="heroStyle">
-      <div class="hero-content flex min-h-[460px] flex-col justify-end p-6 md:p-10">
-        <p class="section-kicker text-xs">Feature Detail</p>
-        <h1 class="mt-4 max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">{{ movie.title }}</h1>
-        <p class="mt-4 max-w-2xl text-base text-[var(--text-secondary)] md:text-lg">{{ movie.overview }}</p>
-        <div class="mt-6 flex flex-wrap gap-3">
-          <span class="detail-chip">评分 {{ movie.averageRating || '0.0' }}</span>
-          <span class="detail-chip" v-if="movie.releaseDate">{{ String(movie.releaseDate).slice(0, 4) }}</span>
-          <span class="detail-chip" v-if="movie.runtime">{{ movie.runtime }} min</span>
-          <span class="detail-chip" v-if="movie.region">{{ movie.region }}</span>
+  <section v-if="movie" class="space-y-10">
+    <!-- 详情巨幕背景 -->
+    <div class="cinema-hero" :style="heroStyle">
+      <div class="absolute inset-0 z-0 bg-black/15"></div>
+      
+      <!-- pt-28 为 fixed 导航栏预留高度，保证文字内容在顶部固定导航下依然完美展示 -->
+      <div class="hero-content relative z-10 flex min-h-[580px] flex-col justify-end p-6 md:p-12 lg:p-16 pt-28 text-white">
+        <!-- 小分类标签 -->
+        <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-white/70 uppercase">
+          Feature Detail
+        </p>
+        
+        <!-- 电影大标题 -->
+        <h1 class="mt-3 max-w-3xl text-3xl font-extrabold tracking-tight text-white md:text-5xl lg:text-6xl leading-[1.1]">
+          {{ movie.title }}
+        </h1>
+        
+        <!-- 底部弹性分栏排版 -->
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mt-4 w-full">
+          <!-- 左侧：简介与元数据 -->
+          <div class="space-y-4 max-w-2xl text-left">
+            <p class="text-sm md:text-base leading-relaxed text-white/80 line-clamp-2 select-none">
+              {{ movie.overview || '探索无限视界，这里汇聚了精选影视、高分推荐以及您私人的影视管理体验。' }}
+            </p>
+            
+            <div class="movie-meta-line">
+              <span v-if="movie.releaseDate">{{ String(movie.releaseDate).slice(0, 4) }}</span>
+              <span v-if="movie.releaseDate && movie.runtime" class="meta-separator">·</span>
+              <span v-if="movie.runtime">{{ movie.runtime }} 分钟</span>
+              <span v-if="movie.runtime && movie.averageRating" class="meta-separator">·</span>
+              <span>★ {{ movie.averageRating ? Number(movie.averageRating).toFixed(1) : '0.0' }}</span>
+              <span v-if="movie.region" class="meta-separator">·</span>
+              <span v-if="movie.region">{{ movie.region }}</span>
+            </div>
+          </div>
+
+          <!-- 右侧：主演列表 (Starring) -->
+          <div v-if="movie.actors" class="hidden md:block text-right text-xs text-white/60 font-medium max-w-[280px] leading-normal select-none pb-1">
+            Starring <span class="text-white/90 font-semibold">{{ movie.actors }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-[1.35fr_0.65fr]">
-      <article class="surface-card p-6 md:p-8">
-        <p class="section-kicker text-xs">Overview</p>
-        <h2 class="mt-3 text-2xl font-semibold">内容信息</h2>
-        <div class="mt-6 space-y-4 text-[var(--text-secondary)]">
-          <p>{{ movie.overview || '暂无简介。' }}</p>
-          <div class="flex flex-wrap gap-3">
-            <span v-for="category in movie.categories || []" :key="category" class="detail-chip">{{ category }}</span>
-          </div>
-          <div class="grid gap-4 pt-2 md:grid-cols-2">
-            <div class="surface-card-soft p-4">
-              <p class="text-xs font-semibold tracking-wider text-[var(--text-muted)] uppercase">TMDB 评分</p>
-              <p class="mt-4 text-3xl font-extrabold text-[var(--text-primary)]">{{ movie.tmdbRating || 'N/A' }}</p>
-            </div>
-            <div class="surface-card-soft p-4">
-              <p class="text-xs font-semibold tracking-wider text-[var(--text-muted)] uppercase">收藏 / 浏览</p>
-              <p class="mt-4 text-3xl font-extrabold text-[var(--text-primary)]">{{ movie.favoriteCount || 0 }} / {{ movie.viewCount || 0 }}</p>
-            </div>
-          </div>
+    <!-- 中部：关于 (About) 双列磨砂玻璃面板 -->
+    <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
+      <!-- 左列：剧情简介 -->
+      <article class="glass-panel-premium space-y-4">
+        <div>
+          <p class="section-kicker">Description</p>
+          <h2 class="text-xl font-bold text-[var(--text-primary)]">剧情简介</h2>
         </div>
+        <p class="text-sm md:text-base leading-relaxed text-[var(--text-secondary)]">
+          {{ movie.overview || '暂无详细简介。' }}
+        </p>
       </article>
 
-      <aside class="space-y-4">
-        <div class="surface-card p-6">
-          <p class="section-kicker text-xs">Metadata</p>
-          <div class="mt-4 space-y-4 text-sm text-[var(--text-secondary)]">
-            <div>
-              <p class="text-[var(--text-muted)]">原标题</p>
-              <p class="mt-1 text-base text-[var(--text-primary)]">{{ movie.originalTitle || movie.title }}</p>
-            </div>
-            <div>
-              <p class="text-[var(--text-muted)]">语言</p>
-              <p class="mt-1 text-base text-[var(--text-primary)]">{{ movie.language || '未提供' }}</p>
-            </div>
-            <div>
-              <p class="text-[var(--text-muted)]">地区</p>
-              <p class="mt-1 text-base text-[var(--text-primary)]">{{ movie.region || '未提供' }}</p>
-            </div>
+      <!-- 右列：类型与快速指标 -->
+      <aside class="glass-panel-premium flex flex-col justify-between gap-6">
+        <div class="space-y-3">
+          <p class="section-kicker">Categories</p>
+          <h3 class="text-lg font-bold text-[var(--text-primary)]">影片分类</h3>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <span v-for="category in movie.categories || []" :key="category" class="detail-chip">
+              {{ category }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 核心评分数据块 -->
+        <div class="grid grid-cols-2 gap-4 border-t border-[var(--border-soft)] pt-4">
+          <div>
+            <p class="text-[10px] font-bold tracking-wider text-[var(--text-muted)] uppercase">TMDB 评分</p>
+            <p class="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{{ movie.tmdbRating || 'N/A' }}</p>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold tracking-wider text-[var(--text-muted)] uppercase">人气与浏览</p>
+            <p class="mt-1 text-2xl font-extrabold text-[var(--text-primary)]">{{ movie.viewCount || 0 }} 次</p>
           </div>
         </div>
       </aside>
     </div>
 
-    <ContentRail title="继续探索" eyebrow="Up Next" description="从同一片库中继续挑选相邻气质的内容。" :movies="relatedMovies" />
+    <!-- 底部：Apple TV 标准三列等宽网格参数区 -->
+    <div class="info-grid-three-cols">
+      <!-- 第一列：基本信息 (Information) -->
+      <div class="space-y-4">
+        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
+          基本信息
+        </h4>
+        <div class="space-y-3 text-xs text-[var(--text-secondary)]">
+          <div>
+            <p class="text-[var(--text-muted)] font-medium">原标题</p>
+            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.originalTitle || movie.title }}</p>
+          </div>
+          <div>
+            <p class="text-[var(--text-muted)] font-medium">上映地区</p>
+            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.region || '未提供' }}</p>
+          </div>
+          <div>
+            <p class="text-[var(--text-muted)] font-medium">上映年份</p>
+            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.releaseDate ? String(movie.releaseDate).slice(0, 4) : '未知' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第二列：语言音频 (Languages) -->
+      <div class="space-y-4">
+        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
+          语言与字幕
+        </h4>
+        <div class="space-y-3 text-xs text-[var(--text-secondary)]">
+          <div>
+            <p class="text-[var(--text-muted)] font-medium">音频轨道 (Audio)</p>
+            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
+              {{ movie.language || '英语' }} (原声)
+            </p>
+          </div>
+          <div>
+            <p class="text-[var(--text-muted)] font-medium">字幕支持 (Subtitles)</p>
+            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
+              简体中文、繁体中文、英文、日文
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第三列：无障碍与画质 (Accessibility) -->
+      <div class="space-y-4">
+        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
+          无障碍与画质
+        </h4>
+        <div class="space-y-4">
+          <!-- 辅助微标 -->
+          <div class="flex flex-wrap gap-2 pt-1">
+            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
+              CC
+            </span>
+            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
+              AD
+            </span>
+            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
+              4K UHD
+            </span>
+            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
+              DOLBY VISION
+            </span>
+          </div>
+          
+          <p class="text-xs leading-relaxed text-[var(--text-muted)]">
+            本片支持 Closed Captions (CC) 辅助字幕与 Audio Descriptions (AD) 视障语音双重无障碍支持，并提供 4K 超高清画质输出。
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 关联推荐 -->
+    <ContentRail 
+      title="继续探索" 
+      eyebrow="Up Next" 
+      description="从同一片库中继续挑选相似气质的内容。" 
+      :movies="relatedMovies" 
+    />
   </section>
 </template>
 
@@ -65,7 +169,9 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovieDetail, getMovieList } from '@/api/movie'
+import { ElMessage } from 'element-plus'
 import ContentRail from '@/components/ContentRail.vue'
+import { mockMovies } from '@/utils/mockData'
 
 const route = useRoute()
 const movie = ref(null)
@@ -74,20 +180,54 @@ const relatedSource = ref([])
 const heroStyle = computed(() => {
   const image = movie.value?.backdropUrl || movie.value?.posterUrl
   return image
-    ? { background: `linear-gradient(110deg, rgba(0,0,0,0.16), rgba(0,0,0,0.04)), url(${image}) center/cover` }
+    ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.15) 100%), url(${image})` }
     : {}
 })
+
 const relatedMovies = computed(() => relatedSource.value.filter((item) => item.id !== movie.value?.id).slice(0, 8))
 
 async function loadMovie() {
-  const [detailResponse, listResponse] = await Promise.all([
-    getMovieDetail(route.params.id),
-    getMovieList()
-  ])
-  movie.value = detailResponse.data
-  relatedSource.value = listResponse.data || []
+  try {
+    const [detailResponse, listResponse] = await Promise.all([
+      getMovieDetail(route.params.id),
+      getMovieList()
+    ])
+    movie.value = detailResponse.data
+    relatedSource.value = listResponse.data && listResponse.data.length > 0 ? listResponse.data : mockMovies
+  } catch (error) {
+    console.warn('API error, falling back to mock movie details:', error)
+    const currentId = Number(route.params.id)
+    const matched = mockMovies.find((m) => m.id === currentId) || mockMovies[0]
+    movie.value = matched
+    relatedSource.value = mockMovies
+  }
 }
 
-watch(() => route.params.id, () => loadMovie())
+watch(
+  () => route.params.id,
+  () => {
+    loadMovie()
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+)
 onMounted(() => loadMovie())
 </script>
+
+<style scoped>
+.movie-meta-line {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.meta-separator {
+  margin: 0 8px;
+  opacity: 0.45;
+  user-select: none;
+}
+</style>

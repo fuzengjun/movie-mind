@@ -1,9 +1,6 @@
 <template>
-  <header class="absolute inset-x-0 top-0 z-30 glass-navbar">
-    <!-- 顶部极细蓝色渐变微光 -->
-    <div class="glow-line"></div>
-    
-    <div class="page-frame relative flex items-center justify-between py-4">
+  <header class="fixed inset-x-0 top-0 z-30 glass-navbar py-4 text-[var(--text-primary)]">
+    <div class="page-frame flex items-center justify-between">
       <!-- 左侧 logo -->
       <RouterLink class="text-lg font-bold tracking-tight no-underline md:text-xl" to="/">
         Movie Mind
