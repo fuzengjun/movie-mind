@@ -57,6 +57,14 @@ public class MovieServiceImpl implements MovieService {
                        m.backdrop_url,
                        m.region,
                        m.language,
+                       m.original_language,
+                       m.certification,
+                       m.production_companies,
+                       m.production_countries,
+                       m.collection_name,
+                       m.release_status,
+                       m.tagline,
+                       m.keywords,
                        m.release_date,
                        m.runtime,
                        m.average_rating,
@@ -77,6 +85,11 @@ public class MovieServiceImpl implements MovieService {
         MovieVO movie = movies.get(0);
         movie.setActors(loadActors(id));
         movie.setDirectors(loadDirectors(id));
+        List<MovieVO.WatchProviderVO> watchProviders = loadWatchProviders(id);
+        movie.setWatchProviders(watchProviders);
+        if (!watchProviders.isEmpty()) {
+            movie.setWatchProviderRegion(watchProviders.get(0).getRegion());
+        }
         return movie;
     }
 
@@ -110,6 +123,14 @@ public class MovieServiceImpl implements MovieService {
         MovieVO movie = mapMovieVO(rs);
         movie.setOriginalTitle(rs.getString("original_title"));
         movie.setLanguage(rs.getString("language"));
+        movie.setOriginalLanguage(rs.getString("original_language"));
+        movie.setCertification(rs.getString("certification"));
+        movie.setProductionCompanies(parseCommaSeparated(rs.getString("production_companies")));
+        movie.setProductionCountries(parseCommaSeparated(rs.getString("production_countries")));
+        movie.setCollectionName(rs.getString("collection_name"));
+        movie.setReleaseStatus(rs.getString("release_status"));
+        movie.setTagline(rs.getString("tagline"));
+        movie.setKeywords(parseCommaSeparated(rs.getString("keywords")));
         movie.setTmdbRating(rs.getBigDecimal("tmdb_rating"));
         return movie;
     }
@@ -136,6 +157,24 @@ public class MovieServiceImpl implements MovieService {
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapPerson(rs), movieId);
     }
 
+    private List<MovieVO.WatchProviderVO> loadWatchProviders(Long movieId) {
+        String sql = """
+                SELECT provider_id, provider_name, logo_url, region, access_type
+                FROM movie_watch_provider
+                WHERE movie_id = ?
+                ORDER BY display_priority ASC, provider_name ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            MovieVO.WatchProviderVO provider = new MovieVO.WatchProviderVO();
+            provider.setProviderId(rs.getLong("provider_id"));
+            provider.setName(rs.getString("provider_name"));
+            provider.setLogoUrl(rs.getString("logo_url"));
+            provider.setRegion(rs.getString("region"));
+            provider.setAccessType(rs.getString("access_type"));
+            return provider;
+        }, movieId);
+    }
+
     private MovieVO.PersonVO mapPerson(ResultSet rs) throws SQLException {
         MovieVO.PersonVO person = new MovieVO.PersonVO();
         person.setId(rs.getLong("id"));
@@ -148,9 +187,13 @@ public class MovieServiceImpl implements MovieService {
     }
 
     private List<String> parseCategories(String categories) {
-        if (categories == null || categories.isBlank()) {
+        return parseCommaSeparated(categories);
+    }
+
+    private List<String> parseCommaSeparated(String value) {
+        if (value == null || value.isBlank()) {
             return List.of();
         }
-        return List.of(categories.split(","));
+        return List.of(value.split(","));
     }
 }

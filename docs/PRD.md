@@ -397,6 +397,15 @@
 | voteAverage      | TMDB 平均评分  |
 | voteCount        | TMDB 评分人数  |
 | originalLanguage | 原始语言       |
+| spokenLanguages  | 影片使用语言     |
+| certification    | 电影分级       |
+| productionCompanies | 制作公司    |
+| productionCountries | 制片国家/地区 |
+| collectionName   | 所属电影系列     |
+| releaseStatus    | 发行状态       |
+| tagline          | 宣传语        |
+| keywords         | 关键词        |
+| watchProviders   | 分地区观看平台及图标 |
 | genres           | 类型         |
 | actors           | 演员         |
 | directors        | 导演         |
@@ -1141,7 +1150,15 @@ sim(A, B) = A · B / (|A| × |B|)
 | release_date   | date     | 上映日期    |
 | runtime        | int      | 时长      |
 | region         | varchar  | 国家/地区   |
-| language       | varchar  | 语言      |
+| language       | varchar  | 影片使用语言  |
+| original_language | varchar | 原始语言代码 |
+| certification  | varchar  | 电影分级    |
+| production_companies | varchar | 制作公司 |
+| production_countries | varchar | 制片国家/地区 |
+| collection_name | varchar | 所属电影系列 |
+| release_status | varchar | 发行状态 |
+| tagline | varchar | 宣传语 |
+| keywords | varchar | 关键词 |
 | average_rating | decimal  | 本站平均评分  |
 | tmdb_rating    | decimal  | TMDB 评分 |
 | favorite_count | int      | 收藏数量    |
@@ -1251,6 +1268,21 @@ sim(A, B) = A · B / (|A| × |B|)
 | id          | bigint | 主键    |
 | movie_id    | bigint | 影视 ID |
 | director_id | bigint | 导演 ID |
+
+---
+
+### 7.2.5 影视-观看平台关系表 movie_watch_provider
+
+| 字段名 | 类型 | 说明 |
+| --- | --- | --- |
+| id | bigint | 主键 |
+| movie_id | bigint | 影视 ID |
+| region | varchar | 平台适用地区 |
+| provider_id | bigint | TMDB 平台 ID |
+| provider_name | varchar | 平台名称 |
+| logo_url | varchar | 平台图标地址 |
+| access_type | varchar | 订阅、免费、广告、租赁或购买 |
+| display_priority | int | 展示优先级 |
 
 ---
 

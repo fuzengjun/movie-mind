@@ -33,6 +33,17 @@
               <span v-if="movie.region" class="meta-separator">·</span>
               <span v-if="movie.region">{{ movie.region }}</span>
             </div>
+
+            <div v-if="movie.watchProviders?.length" class="movie-provider-strip">
+              <span class="movie-provider-region">{{ watchProviderRegionText }}</span>
+              <div class="movie-provider-list">
+                <div v-for="provider in movie.watchProviders" :key="provider.providerId" class="movie-provider-chip">
+                  <img v-if="provider.logoUrl" :src="provider.logoUrl" :alt="provider.name" class="movie-provider-logo" />
+                  <span class="movie-provider-name">{{ provider.name }}</span>
+                  <span class="movie-provider-type">{{ accessTypeText(provider.accessType) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- 右侧：主演列表 (Starring) -->
@@ -85,35 +96,80 @@
 
     <!-- 影片资料：仅展示数据库或上游数据源能够确认的信息 -->
     <div class="info-grid-three-cols movie-info-grid">
-      <section class="movie-info-section movie-info-primary">
-        <h2 class="movie-info-title">基本信息</h2>
-        <div class="movie-info-facts">
-          <div class="movie-info-item movie-info-item-wide">
-            <p class="movie-info-label">原标题</p>
-            <p class="movie-info-value">{{ movie.originalTitle || movie.title }}</p>
+      <h2 class="movie-info-title">基本信息</h2>
+      <div class="movie-info-groups">
+        <section class="movie-info-group">
+          <h3>发行信息</h3>
+          <div class="movie-info-list">
+            <div class="movie-info-item">
+              <p class="movie-info-label">上映日期</p>
+              <p class="movie-info-value">{{ releaseDateText }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">片长</p>
+              <p class="movie-info-value">{{ runtimeText }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">电影分级</p>
+              <p class="movie-info-value">{{ movie.certification || '未提供' }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">制片国家/地区</p>
+              <p class="movie-info-value">{{ joinedText(movie.productionCountries, movie.region) }}</p>
+            </div>
           </div>
-          <div class="movie-info-item">
-            <p class="movie-info-label">上映地区</p>
-            <p class="movie-info-value">{{ movie.region || '未提供' }}</p>
+        </section>
+
+        <section class="movie-info-group">
+          <h3>制作信息</h3>
+          <div class="movie-info-list">
+            <div class="movie-info-item">
+              <p class="movie-info-label">原标题</p>
+              <p class="movie-info-value">{{ movie.originalTitle || movie.title }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">制作公司</p>
+              <p class="movie-info-value">{{ joinedText(movie.productionCompanies) }}</p>
+            </div>
+            <div v-if="movie.collectionName" class="movie-info-item">
+              <p class="movie-info-label">所属系列</p>
+              <p class="movie-info-value">{{ movie.collectionName }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">发行状态</p>
+              <p class="movie-info-value">{{ releaseStatusText }}</p>
+            </div>
+            <div v-if="movie.tagline" class="movie-info-item">
+              <p class="movie-info-label">宣传语</p>
+              <p class="movie-info-value">{{ movie.tagline }}</p>
+            </div>
           </div>
-          <div class="movie-info-item">
-            <p class="movie-info-label">上映年份</p>
-            <p class="movie-info-value">{{ movie.releaseDate ? String(movie.releaseDate).slice(0, 4) : '未知' }}</p>
+        </section>
+
+        <section class="movie-info-group">
+          <h3>语言与主题</h3>
+          <div class="movie-info-list">
+            <div class="movie-info-item">
+              <p class="movie-info-label">原始语言</p>
+              <p class="movie-info-value">{{ originalLanguageText }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">影片语言</p>
+              <p class="movie-info-value">{{ spokenLanguagesText }}</p>
+            </div>
+            <div class="movie-info-item">
+              <p class="movie-info-label">影片分类</p>
+              <p class="movie-info-value">{{ joinedText(movie.categories) }}</p>
+            </div>
+            <div v-if="movie.keywords?.length" class="movie-info-item">
+              <p class="movie-info-label">关键词</p>
+              <div class="movie-keyword-list">
+                <span v-for="keyword in movie.keywords" :key="keyword">{{ keyword }}</span>
+              </div>
+            </div>
           </div>
-          <div class="movie-info-item">
-            <p class="movie-info-label">片长</p>
-            <p class="movie-info-value">{{ movie.runtime ? `${movie.runtime} 分钟` : '未提供' }}</p>
-          </div>
-          <div class="movie-info-item">
-            <p class="movie-info-label">影片语言</p>
-            <p class="movie-info-value">{{ spokenLanguagesText }}</p>
-          </div>
-          <div class="movie-info-item movie-info-item-wide">
-            <p class="movie-info-label">影片分类</p>
-            <p class="movie-info-value">{{ (movie.categories || []).join('、') || '未提供' }}</p>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
     </div>
     <!-- 演职人员 -->
     <CastRail 
@@ -168,6 +224,56 @@ const spokenLanguagesText = computed(() => {
   if (!values.length) return '暂无语言信息'
   return values.map((language) => localizeLanguage(language)).join('、')
 })
+
+const originalLanguageText = computed(() => {
+  return movie.value?.originalLanguage ? localizeLanguage(movie.value.originalLanguage) : '未提供'
+})
+
+const releaseDateText = computed(() => {
+  const value = movie.value?.releaseDate
+  return value ? String(value).replaceAll('-', '.') : '未提供'
+})
+
+const runtimeText = computed(() => {
+  const runtime = Number(movie.value?.runtime || 0)
+  if (!runtime) return '未提供'
+  const hours = Math.floor(runtime / 60)
+  const minutes = runtime % 60
+  return hours ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`
+})
+
+const releaseStatusText = computed(() => {
+  const statusMap = {
+    Released: '已上映',
+    'Post Production': '后期制作',
+    'In Production': '制作中',
+    Planned: '已计划',
+    Rumored: '传闻项目',
+    Canceled: '已取消'
+  }
+  return statusMap[movie.value?.releaseStatus] || movie.value?.releaseStatus || '未提供'
+})
+
+const watchProviderRegionText = computed(() => {
+  const regionMap = { CN: '中国大陆可观看', US: '美国地区可观看' }
+  return regionMap[movie.value?.watchProviderRegion] || `${movie.value?.watchProviderRegion || ''} 地区可观看`
+})
+
+function joinedText(value, fallback = '') {
+  const values = normalizeList(value)
+  return values.length ? values.join('、') : fallback || '未提供'
+}
+
+function accessTypeText(accessType) {
+  const typeMap = {
+    flatrate: '订阅',
+    free: '免费',
+    ads: '含广告',
+    rent: '租赁',
+    buy: '购买'
+  }
+  return typeMap[accessType] || ''
+}
 
 function normalizeList(value) {
   if (Array.isArray(value)) {
@@ -312,17 +418,70 @@ onMounted(() => loadMovie())
   user-select: none;
 }
 
-.movie-info-grid {
-  display: block;
-  padding: 28px 32px 30px;
+.movie-provider-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
 }
 
-.movie-info-section {
-  min-width: 0;
+.movie-provider-region {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.7rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+
+.movie-provider-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.movie-provider-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 5px 10px 5px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(12, 12, 14, 0.48);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.movie-provider-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.movie-provider-name {
+  max-width: 150px;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-provider-type {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.65rem;
+}
+
+.movie-info-grid {
+  display: block;
+  padding: 28px 32px 32px;
 }
 
 .movie-info-title {
-  margin: 0 0 20px;
+  margin: 0 0 18px;
   padding-bottom: 11px;
   border-bottom: 1px solid var(--border-soft);
   color: var(--text-primary);
@@ -332,27 +491,38 @@ onMounted(() => loadMovie())
   transform: translate(-8px, -6px);
 }
 
-.movie-info-facts {
+.movie-info-groups {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 22px 28px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 36px;
 }
 
-.movie-info-item {
+.movie-info-group {
   min-width: 0;
 }
 
-.movie-info-item-wide {
-  grid-column: span 2;
+.movie-info-group h3 {
+  margin: 0 0 17px;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 720;
 }
 
+.movie-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.movie-info-item,
 .movie-info-item p {
+  min-width: 0;
   margin: 0;
 }
 
 .movie-info-label {
   color: var(--text-primary);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 650;
 }
 
@@ -360,28 +530,44 @@ onMounted(() => loadMovie())
   overflow-wrap: anywhere;
   margin-top: 4px !important;
   color: var(--text-muted);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 500;
   line-height: 1.5;
 }
 
+.movie-keyword-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+.movie-keyword-list span {
+  padding: 4px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--surface-primary);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+}
+
 @media (max-width: 900px) {
-  .movie-info-facts {
+  .movie-info-groups {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
+  .movie-provider-name {
+    max-width: 110px;
+  }
+
   .movie-info-grid {
     padding: 24px 22px;
   }
 
-  .movie-info-facts {
+  .movie-info-groups {
     grid-template-columns: 1fr;
-    gap: 18px;
-  }
-
-  .movie-info-item-wide {
-    grid-column: auto;
+    gap: 28px;
   }
 }</style>

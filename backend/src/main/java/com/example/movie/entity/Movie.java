@@ -27,6 +27,14 @@ public class Movie extends BaseEntity {
     private Integer runtime;
     private String region;
     private String language;
+    private String originalLanguage;
+    private String certification;
+    private String productionCompanies;
+    private String productionCountries;
+    private String collectionName;
+    private String releaseStatus;
+    private String tagline;
+    private String keywords;
     private BigDecimal averageRating;
     private BigDecimal tmdbRating;
     private Integer favoriteCount;

@@ -46,7 +46,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         int imported = 0;
         int skipped = 0;
         for (Long movieId : movieIds) {
-            JsonNode detail = fetchJson("/movie/" + movieId + "?append_to_response=credits&language=zh-CN");
+            JsonNode detail = fetchJson("/movie/" + movieId + "?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
             if (detail == null || detail.path("id").isMissingNode()) {
                 skipped++;
                 continue;
@@ -134,7 +134,15 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         LocalDate releaseDate = parseDate(textOrNull(detail, "release_date"));
         Integer runtime = detail.path("runtime").isNumber() ? detail.path("runtime").asInt() : null;
         String region = extractRegion(detail.path("production_countries"));
-        String language = extractLanguages(detail.path("spoken_languages"), textOrNull(detail, "original_language"));
+        String originalLanguage = textOrNull(detail, "original_language");
+        String language = extractLanguages(detail.path("spoken_languages"), originalLanguage);
+        String certification = extractCertification(detail.path("release_dates").path("results"));
+        String productionCompanies = extractNames(detail.path("production_companies"));
+        String productionCountries = extractNames(detail.path("production_countries"));
+        String collectionName = textOrNull(detail.path("belongs_to_collection"), "name");
+        String releaseStatus = textOrNull(detail, "status");
+        String tagline = textOrNull(detail, "tagline");
+        String keywords = extractNames(detail.path("keywords").path("keywords"));
         BigDecimal rating = decimal(detail.path("vote_average").asDouble(0));
         int voteCount = detail.path("vote_count").asInt(0);
         int viewCount = Math.max(0, (int) Math.round(detail.path("popularity").asDouble(0) * 100));
@@ -142,9 +150,11 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         jdbcTemplate.update("""
                 INSERT INTO movie (
                     tmdb_id, title, original_title, overview, poster_url, backdrop_url,
-                    release_date, runtime, region, language, average_rating, tmdb_rating,
-                    favorite_count, view_count, status, deleted, create_time, update_time
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NOW(), NOW())
+                    release_date, runtime, region, language, original_language, certification,
+                    production_companies, production_countries, collection_name, release_status,
+                    tagline, keywords, average_rating, tmdb_rating, favorite_count, view_count,
+                    status, deleted, create_time, update_time
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NOW(), NOW())
                 ON DUPLICATE KEY UPDATE
                     title = VALUES(title),
                     original_title = VALUES(original_title),
@@ -155,6 +165,14 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                     runtime = VALUES(runtime),
                     region = VALUES(region),
                     language = VALUES(language),
+                    original_language = VALUES(original_language),
+                    certification = VALUES(certification),
+                    production_companies = VALUES(production_companies),
+                    production_countries = VALUES(production_countries),
+                    collection_name = VALUES(collection_name),
+                    release_status = VALUES(release_status),
+                    tagline = VALUES(tagline),
+                    keywords = VALUES(keywords),
                     average_rating = VALUES(average_rating),
                     tmdb_rating = VALUES(tmdb_rating),
                     favorite_count = VALUES(favorite_count),
@@ -173,12 +191,19 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                 runtime,
                 region,
                 language,
+                originalLanguage,
+                certification,
+                productionCompanies,
+                productionCountries,
+                collectionName,
+                releaseStatus,
+                tagline,
+                keywords,
                 rating,
                 rating,
                 voteCount,
                 viewCount
         );
-
         Long localMovieId = jdbcTemplate.queryForObject("SELECT id FROM movie WHERE tmdb_id = ?", Long.class, tmdbId);
         if (localMovieId == null) {
             throw new ResponseStatusException(INTERNAL_SERVER_ERROR, "影片写入数据库后未能读取本地 ID");
@@ -202,6 +227,43 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         }
 
         syncCredits(localMovieId, detail.path("credits"));
+        syncWatchProviders(localMovieId, detail.path("watch/providers").path("results"));
+    }
+
+    private void syncWatchProviders(Long movieId, JsonNode providerResults) {
+        jdbcTemplate.update("DELETE FROM movie_watch_provider WHERE movie_id = ?", movieId);
+        if (providerResults == null || !providerResults.isObject()) {
+            return;
+        }
+
+        String region = providerResults.has("CN") ? "CN" : providerResults.has("US") ? "US" : null;
+        if (region == null) {
+            return;
+        }
+
+        JsonNode regionProviders = providerResults.path(region);
+        for (String accessType : List.of("flatrate", "free", "ads", "rent", "buy")) {
+            for (JsonNode providerNode : regionProviders.path(accessType)) {
+                long providerId = providerNode.path("provider_id").asLong(0);
+                String providerName = textOrNull(providerNode, "provider_name");
+                if (providerId == 0 || !StringUtils.hasText(providerName)) {
+                    continue;
+                }
+                jdbcTemplate.update("""
+                        INSERT IGNORE INTO movie_watch_provider (
+                            movie_id, region, provider_id, provider_name, logo_url, access_type, display_priority
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        movieId,
+                        region,
+                        providerId,
+                        providerName,
+                        imageUrl(textOrNull(providerNode, "logo_path")),
+                        accessType,
+                        providerNode.path("display_priority").asInt(999)
+                );
+            }
+        }
     }
 
     private void syncCredits(Long movieId, JsonNode credits) {
@@ -291,6 +353,50 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             case 3 -> "非二元";
             default -> null;
         };
+    }
+
+    private String extractCertification(JsonNode releaseDateResults) {
+        for (String preferredRegion : List.of("CN", "US")) {
+            for (JsonNode regionNode : releaseDateResults) {
+                if (!preferredRegion.equals(regionNode.path("iso_3166_1").asText())) {
+                    continue;
+                }
+                String certification = certificationFromReleases(regionNode.path("release_dates"));
+                if (StringUtils.hasText(certification)) {
+                    return certification;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String certificationFromReleases(JsonNode releases) {
+        for (int preferredType : List.of(3, 2, 4, 1, 5, 6)) {
+            for (JsonNode releaseNode : releases) {
+                if (releaseNode.path("type").asInt() != preferredType) {
+                    continue;
+                }
+                String certification = textOrNull(releaseNode, "certification");
+                if (StringUtils.hasText(certification)) {
+                    return certification;
+                }
+            }
+        }
+        return null;
+    }
+
+    private String extractNames(JsonNode nodes) {
+        if (nodes == null || !nodes.isArray()) {
+            return null;
+        }
+        Set<String> names = new LinkedHashSet<>();
+        for (JsonNode node : nodes) {
+            String name = textOrNull(node, "name");
+            if (StringUtils.hasText(name)) {
+                names.add(name);
+            }
+        }
+        return names.isEmpty() ? null : String.join(",", names);
     }
 
     private String extractLanguages(JsonNode spokenLanguages, String originalLanguage) {

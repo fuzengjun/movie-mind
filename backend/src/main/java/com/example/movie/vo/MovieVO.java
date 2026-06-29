@@ -17,6 +17,16 @@ public class MovieVO {
     private String backdropUrl;
     private String region;
     private String language;
+    private String originalLanguage;
+    private String certification;
+    private List<String> productionCompanies;
+    private List<String> productionCountries;
+    private String collectionName;
+    private String releaseStatus;
+    private String tagline;
+    private List<String> keywords;
+    private String watchProviderRegion;
+    private List<WatchProviderVO> watchProviders;
     private LocalDate releaseDate;
     private Integer runtime;
     private BigDecimal averageRating;
@@ -26,6 +36,15 @@ public class MovieVO {
     private List<String> categories;
     private List<PersonVO> actors;
     private List<PersonVO> directors;
+
+    @Data
+    public static class WatchProviderVO {
+        private Long providerId;
+        private String name;
+        private String logoUrl;
+        private String region;
+        private String accessType;
+    }
 
     @Data
     public static class PersonVO {
