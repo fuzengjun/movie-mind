@@ -76,10 +76,16 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
                        m.favorite_count,
                        m.view_count,
                        m.status,
-                       GROUP_CONCAT(c.name ORDER BY c.name SEPARATOR ',') AS categories
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ',') AS categories,
+                       GROUP_CONCAT(DISTINCT d.name ORDER BY d.name SEPARATOR ',') AS directors,
+                       GROUP_CONCAT(DISTINCT a.name ORDER BY a.name SEPARATOR ',') AS actors
                 FROM movie m
                 LEFT JOIN movie_category mc ON mc.movie_id = m.id
                 LEFT JOIN category c ON c.id = mc.category_id AND c.deleted = 0
+                LEFT JOIN movie_director md ON md.movie_id = m.id
+                LEFT JOIN director d ON d.id = md.director_id AND d.deleted = 0
+                LEFT JOIN movie_actor ma ON ma.movie_id = m.id
+                LEFT JOIN actor a ON a.id = ma.actor_id AND a.deleted = 0
                 WHERE m.deleted = 0
                 GROUP BY m.id
                 ORDER BY m.update_time DESC, m.id DESC
@@ -97,6 +103,8 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
             dto.setViewCount(rs.getInt("view_count"));
             dto.setStatus(rs.getInt("status"));
             dto.setCategories(splitNames(rs.getString("categories")));
+            dto.setDirectors(splitNames(rs.getString("directors")));
+            dto.setActors(splitNames(rs.getString("actors")));
             return dto;
         });
     }

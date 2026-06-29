@@ -24,4 +24,14 @@ public class MovieVO {
     private Integer favoriteCount;
     private Integer viewCount;
     private List<String> categories;
+    private List<PersonVO> actors;
+    private List<PersonVO> directors;
+
+    @Data
+    public static class PersonVO {
+        private String name;
+        private String originalName;
+        private String profileUrl;
+        private String roleName;
+    }
 }

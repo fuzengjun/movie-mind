@@ -7,7 +7,7 @@
       <!-- pt-28 为 fixed 导航栏预留高度，保证文字内容在顶部固定导航下依然完美展示 -->
       <div class="hero-content relative z-10 flex min-h-[580px] flex-col justify-end p-6 md:p-12 lg:p-16 pt-28 text-white">
         <!-- 小分类标签 -->
-        <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-white/70 uppercase">
+        <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-white/70 uppercase border-none">
           Feature Detail
         </p>
         
@@ -36,8 +36,8 @@
           </div>
 
           <!-- 右侧：主演列表 (Starring) -->
-          <div v-if="movie.actors" class="hidden md:block text-right text-xs text-white/60 font-medium max-w-[280px] leading-normal select-none pb-1">
-            Starring <span class="text-white/90 font-semibold">{{ movie.actors }}</span>
+          <div v-if="actorsString" class="hidden md:block text-right text-xs text-white/60 font-medium max-w-[280px] leading-normal select-none pb-1">
+            Starring <span class="text-white/90 font-semibold">{{ actorsString }}</span>
           </div>
         </div>
       </div>
@@ -45,22 +45,38 @@
 
     <!-- 中部：关于 (About) 双列磨砂玻璃面板 -->
     <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
-      <!-- 左列：剧情简介 -->
+      <!-- 左列：剧情简介 与 导演团队 -->
       <article class="glass-panel-premium space-y-4">
         <div>
           <p class="section-kicker">Description</p>
-          <h2 class="text-xl font-bold text-[var(--text-primary)]">剧情简介</h2>
+          <h2 class="text-xl font-bold text-[var(--text-primary)] border-none">剧情简介</h2>
         </div>
         <p class="text-sm md:text-base leading-relaxed text-[var(--text-secondary)]">
           {{ movie.overview || '暂无详细简介。' }}
         </p>
+
+        <!-- 导演团队卡片列表 -->
+        <div class="border-t border-[var(--border-soft)] pt-4 mt-6 space-y-3">
+          <p class="text-[10px] font-bold tracking-wider text-[var(--text-muted)] uppercase">导演团队</p>
+          <div class="flex flex-wrap gap-3 pt-1">
+            <div v-for="person in movie.directors || []" :key="`director-${person.name}`" class="flex items-center gap-3 p-2 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-soft)]">
+              <img v-if="person.profileUrl" :src="person.profileUrl" :alt="person.name" class="h-10 w-10 rounded-lg object-cover" />
+              <div v-else class="h-10 w-10 rounded-lg bg-[var(--border-soft)]"></div>
+              <div>
+                <p class="text-xs font-semibold text-[var(--text-primary)]">{{ person.name }}</p>
+                <p class="text-[9px] text-[var(--text-muted)]">{{ person.originalName || '导演' }}</p>
+              </div>
+            </div>
+            <p v-if="!(movie.directors || []).length" class="text-xs text-[var(--text-muted)]">暂无导演信息。</p>
+          </div>
+        </div>
       </article>
 
-      <!-- 右列：类型与快速指标 -->
+      <!-- 右列：类型、评分与主演卡片 -->
       <aside class="glass-panel-premium flex flex-col justify-between gap-6">
         <div class="space-y-3">
           <p class="section-kicker">Categories</p>
-          <h3 class="text-lg font-bold text-[var(--text-primary)]">影片分类</h3>
+          <h3 class="text-lg font-bold text-[var(--text-primary)] border-none">影片分类</h3>
           <div class="flex flex-wrap gap-2 pt-1">
             <span v-for="category in movie.categories || []" :key="category" class="detail-chip">
               {{ category }}
@@ -169,7 +185,6 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovieDetail, getMovieList } from '@/api/movie'
-import { ElMessage } from 'element-plus'
 import ContentRail from '@/components/ContentRail.vue'
 import { mockMovies } from '@/utils/mockData'
 
@@ -182,6 +197,16 @@ const heroStyle = computed(() => {
   return image
     ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.15) 100%), url(${image})` }
     : {}
+})
+
+// Starring 主演名单拼接字符串（提取前 3 位演员）
+const actorsString = computed(() => {
+  if (!movie.value?.actors || movie.value.actors.length === 0) return ''
+  // 兼容原本的演员数据可能是对象数组或是纯字符串列表
+  if (Array.isArray(movie.value.actors)) {
+    return movie.value.actors.slice(0, 3).map((a) => a.name).join(', ')
+  }
+  return String(movie.value.actors)
 })
 
 const relatedMovies = computed(() => relatedSource.value.filter((item) => item.id !== movie.value?.id).slice(0, 8))

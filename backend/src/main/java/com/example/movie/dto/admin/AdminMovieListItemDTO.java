@@ -19,4 +19,6 @@ public class AdminMovieListItemDTO {
     private Integer viewCount;
     private Integer status;
     private List<String> categories;
+    private List<String> directors;
+    private List<String> actors;
 }

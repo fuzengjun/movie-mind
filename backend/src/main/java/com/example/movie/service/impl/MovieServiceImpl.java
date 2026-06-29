@@ -34,7 +34,7 @@ public class MovieServiceImpl implements MovieService {
                        m.average_rating,
                        m.favorite_count,
                        m.view_count,
-                       GROUP_CONCAT(c.name ORDER BY c.name SEPARATOR ',') AS categories
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ',') AS categories
                 FROM movie m
                 LEFT JOIN movie_category mc ON mc.movie_id = m.id
                 LEFT JOIN category c ON c.id = mc.category_id AND c.deleted = 0
@@ -63,7 +63,7 @@ public class MovieServiceImpl implements MovieService {
                        m.tmdb_rating,
                        m.favorite_count,
                        m.view_count,
-                       GROUP_CONCAT(c.name ORDER BY c.name SEPARATOR ',') AS categories
+                       GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ',') AS categories
                 FROM movie m
                 LEFT JOIN movie_category mc ON mc.movie_id = m.id
                 LEFT JOIN category c ON c.id = mc.category_id AND c.deleted = 0
@@ -71,7 +71,13 @@ public class MovieServiceImpl implements MovieService {
                 GROUP BY m.id
                 """;
         List<MovieVO> movies = jdbcTemplate.query(sql, (rs, rowNum) -> mapMovieDetail(rs), id);
-        return movies.isEmpty() ? null : movies.get(0);
+        if (movies.isEmpty()) {
+            return null;
+        }
+        MovieVO movie = movies.get(0);
+        movie.setActors(loadActors(id));
+        movie.setDirectors(loadDirectors(id));
+        return movie;
     }
 
     @Override
@@ -106,6 +112,37 @@ public class MovieServiceImpl implements MovieService {
         movie.setLanguage(rs.getString("language"));
         movie.setTmdbRating(rs.getBigDecimal("tmdb_rating"));
         return movie;
+    }
+
+    private List<MovieVO.PersonVO> loadActors(Long movieId) {
+        String sql = """
+                SELECT a.name, a.original_name, a.profile_url, ma.role_name
+                FROM movie_actor ma
+                INNER JOIN actor a ON a.id = ma.actor_id AND a.deleted = 0
+                WHERE ma.movie_id = ?
+                ORDER BY ma.id ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapPerson(rs), movieId);
+    }
+
+    private List<MovieVO.PersonVO> loadDirectors(Long movieId) {
+        String sql = """
+                SELECT d.name, d.original_name, d.profile_url, NULL AS role_name
+                FROM movie_director md
+                INNER JOIN director d ON d.id = md.director_id AND d.deleted = 0
+                WHERE md.movie_id = ?
+                ORDER BY md.id ASC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> mapPerson(rs), movieId);
+    }
+
+    private MovieVO.PersonVO mapPerson(ResultSet rs) throws SQLException {
+        MovieVO.PersonVO person = new MovieVO.PersonVO();
+        person.setName(rs.getString("name"));
+        person.setOriginalName(rs.getString("original_name"));
+        person.setProfileUrl(rs.getString("profile_url"));
+        person.setRoleName(rs.getString("role_name"));
+        return person;
     }
 
     private List<String> parseCategories(String categories) {

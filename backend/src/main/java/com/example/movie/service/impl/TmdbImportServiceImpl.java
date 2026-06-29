@@ -46,7 +46,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         int imported = 0;
         int skipped = 0;
         for (Long movieId : movieIds) {
-            JsonNode detail = fetchJson("/movie/" + movieId + "?language=zh-CN");
+            JsonNode detail = fetchJson("/movie/" + movieId + "?append_to_response=credits&language=zh-CN");
             if (detail == null || detail.path("id").isMissingNode()) {
                 skipped++;
                 continue;
@@ -187,6 +187,97 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                 jdbcTemplate.update("INSERT IGNORE INTO movie_category (movie_id, category_id) VALUES (?, ?)", localMovieId, categoryId);
             }
         }
+
+        syncCredits(localMovieId, detail.path("credits"));
+    }
+
+    private void syncCredits(Long movieId, JsonNode credits) {
+        jdbcTemplate.update("DELETE FROM movie_actor WHERE movie_id = ?", movieId);
+        jdbcTemplate.update("DELETE FROM movie_director WHERE movie_id = ?", movieId);
+
+        int castCount = 0;
+        for (JsonNode actorNode : credits.path("cast")) {
+            if (castCount >= 12) {
+                break;
+            }
+            Long actorId = upsertActor(actorNode);
+            if (actorId != null) {
+                jdbcTemplate.update("INSERT IGNORE INTO movie_actor (movie_id, actor_id, role_name) VALUES (?, ?, ?)",
+                        movieId,
+                        actorId,
+                        textOrNull(actorNode, "character"));
+                castCount++;
+            }
+        }
+
+        for (JsonNode crewNode : credits.path("crew")) {
+            if (!"Director".equalsIgnoreCase(textOrNull(crewNode, "job"))) {
+                continue;
+            }
+            Long directorId = upsertDirector(crewNode);
+            if (directorId != null) {
+                jdbcTemplate.update("INSERT IGNORE INTO movie_director (movie_id, director_id) VALUES (?, ?)", movieId, directorId);
+            }
+        }
+    }
+
+    private Long upsertActor(JsonNode actorNode) {
+        Long tmdbPersonId = actorNode.path("id").asLong();
+        if (tmdbPersonId == 0) {
+            return null;
+        }
+        jdbcTemplate.update("""
+                INSERT INTO actor (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
+                VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    name = VALUES(name),
+                    original_name = VALUES(original_name),
+                    gender = VALUES(gender),
+                    profile_url = VALUES(profile_url),
+                    deleted = 0,
+                    update_time = NOW()
+                """,
+                tmdbPersonId,
+                textOrNull(actorNode, "name"),
+                textOrNull(actorNode, "original_name"),
+                normalizeGender(actorNode.path("gender").asInt()),
+                imageUrl(textOrNull(actorNode, "profile_path"))
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM actor WHERE tmdb_id = ?", Long.class, tmdbPersonId);
+    }
+
+    private Long upsertDirector(JsonNode directorNode) {
+        Long tmdbPersonId = directorNode.path("id").asLong();
+        if (tmdbPersonId == 0) {
+            return null;
+        }
+        jdbcTemplate.update("""
+                INSERT INTO director (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
+                VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
+                ON DUPLICATE KEY UPDATE
+                    name = VALUES(name),
+                    original_name = VALUES(original_name),
+                    gender = VALUES(gender),
+                    profile_url = VALUES(profile_url),
+                    deleted = 0,
+                    update_time = NOW()
+                """,
+                tmdbPersonId,
+                textOrNull(directorNode, "name"),
+                textOrNull(directorNode, "original_name"),
+                normalizeGender(directorNode.path("gender").asInt()),
+                imageUrl(textOrNull(directorNode, "profile_path"))
+        );
+        return jdbcTemplate.queryForObject("SELECT id FROM director WHERE tmdb_id = ?", Long.class, tmdbPersonId);
+    }
+
+    private String normalizeGender(int gender) {
+        return switch (gender) {
+            case 1 -> "女";
+            case 2 -> "男";
+            case 3 -> "非二元";
+            default -> null;
+        };
     }
 
     private String extractRegion(JsonNode countries) {

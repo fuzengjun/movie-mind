@@ -4,7 +4,7 @@
       <div>
         <p class="section-kicker text-xs">Content Ops</p>
         <h2 class="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">影片管理</h2>
-        <p class="mt-3 max-w-2xl text-[var(--text-secondary)]">当前用真实接口拉取片库数据，展示重点影片的地区、评分、收藏与浏览表现。</p>
+        <p class="mt-3 max-w-2xl text-[var(--text-secondary)]">当前用真实接口拉取片库数据，展示重点影片的地区、评分、收藏、浏览以及导演演员信息。</p>
       </div>
       <div class="detail-chip">最近 {{ movies.length }} 部内容</div>
     </div>
@@ -23,18 +23,19 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="region" label="地区" width="120" />
+        <el-table-column label="导演" min-width="180">
+          <template #default="{ row }">{{ (row.directors || []).join(' / ') || '未导入' }}</template>
+        </el-table-column>
+        <el-table-column label="主要演员" min-width="220">
+          <template #default="{ row }">{{ (row.actors || []).slice(0, 3).join(' / ') || '未导入' }}</template>
+        </el-table-column>
+        <el-table-column prop="region" label="地区" width="150" />
         <el-table-column label="上映" width="120">
           <template #default="{ row }">{{ row.releaseDate ? String(row.releaseDate).slice(0, 10) : '未提供' }}</template>
         </el-table-column>
         <el-table-column prop="averageRating" label="评分" width="100" />
         <el-table-column prop="favoriteCount" label="收藏" width="100" />
         <el-table-column prop="viewCount" label="浏览" width="100" />
-        <el-table-column label="状态" width="120">
-          <template #default="{ row }">
-            <span class="detail-chip">{{ row.status === 1 ? '已上架' : '已下架' }}</span>
-          </template>
-        </el-table-column>
       </el-table>
     </div>
   </section>
