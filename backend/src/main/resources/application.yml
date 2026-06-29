@@ -15,6 +15,11 @@ spring:
   jackson:
     default-property-inclusion: non_null
 
+app:
+  cache:
+    redis:
+      enabled: ${REDIS_ENABLED:false}
+
 tmdb:
   base-url: ${TMDB_BASE_URL:https://api.themoviedb.org/3}
   image-base-url: ${TMDB_IMAGE_BASE_URL:https://image.tmdb.org/t/p/w780}

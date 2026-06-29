@@ -12,6 +12,14 @@ spring:
       host: 127.0.0.1
       port: 6379
 
+app:
+  cache:
+    redis:
+      enabled: false
+
+# 若本机可用 Redis，可改为 true，并按需修改上面的 host/port
+# 也可以通过环境变量 REDIS_ENABLED=true 打开缓存
+
 tmdb:
   read-access-token: YOUR_TMDB_READ_ACCESS_TOKEN
   base-url: https://api.themoviedb.org/3

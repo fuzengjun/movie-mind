@@ -10,6 +10,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,23 +22,22 @@ import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class AdminStatisticsServiceImpl implements AdminStatisticsService {
 
-    private static final DateTimeFormatter YEAR_FORMATTER = DateTimeFormatter.ofPattern("yyyy");
-
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
-    private final StringRedisTemplate stringRedisTemplate;
+    private final ObjectProvider<StringRedisTemplate> stringRedisTemplateProvider;
+
+    @Value("${app.cache.redis.enabled:false}")
+    private boolean redisCacheEnabled;
 
     @Override
     public DashboardStatisticsDTO getDashboardStatistics(Integer range) {
@@ -162,6 +163,10 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
     }
 
     private DashboardStatisticsDTO readCache(String cacheKey) {
+        StringRedisTemplate stringRedisTemplate = getStringRedisTemplate();
+        if (stringRedisTemplate == null) {
+            return null;
+        }
         try {
             String cachedValue = stringRedisTemplate.opsForValue().get(cacheKey);
             if (cachedValue == null || cachedValue.isBlank()) {
@@ -175,11 +180,22 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
     }
 
     private void writeCache(String cacheKey, DashboardStatisticsDTO statistics) {
+        StringRedisTemplate stringRedisTemplate = getStringRedisTemplate();
+        if (stringRedisTemplate == null) {
+            return;
+        }
         try {
             stringRedisTemplate.opsForValue().set(cacheKey, objectMapper.writeValueAsString(statistics), Duration.ofMinutes(10));
         } catch (DataAccessException | JsonProcessingException exception) {
             log.warn("Failed to write dashboard cache: {}", exception.getMessage());
         }
+    }
+
+    private StringRedisTemplate getStringRedisTemplate() {
+        if (!redisCacheEnabled) {
+            return null;
+        }
+        return stringRedisTemplateProvider.getIfAvailable();
     }
 
     private DashboardStatisticsDTO.Summary buildSummary() {
@@ -260,7 +276,7 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
                 LEFT JOIN movie m ON m.id = mc.movie_id AND m.deleted = 0
                 WHERE c.deleted = 0
                 GROUP BY c.id, c.name
-                HAVING value > 0
+                HAVING COUNT(m.id) > 0
                 ORDER BY value DESC, c.name ASC
                 """;
         return queryNamedValues(sql);
@@ -268,29 +284,20 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
 
     private List<DashboardStatisticsDTO.NamedValue> buildRatingDistribution() {
         String sql = """
-                SELECT bucket_name AS item_name, COUNT(*) AS value
-                FROM (
-                    SELECT CASE
-                               WHEN score < 2 THEN '0-1.9'
-                               WHEN score < 4 THEN '2.0-3.9'
-                               WHEN score < 6 THEN '4.0-5.9'
-                               WHEN score < 8 THEN '6.0-7.9'
-                               ELSE '8.0-10'
-                           END AS bucket_name
-                    FROM rating
-                ) rating_bucket
-                GROUP BY bucket_name
+                SELECT CASE
+                           WHEN average_rating < 2 THEN '0-2'
+                           WHEN average_rating < 4 THEN '2-4'
+                           WHEN average_rating < 6 THEN '4-6'
+                           WHEN average_rating < 8 THEN '6-8'
+                           ELSE '8-10'
+                       END AS item_name,
+                       COUNT(*) AS value
+                FROM movie
+                WHERE deleted = 0
+                GROUP BY item_name
+                ORDER BY item_name
                 """;
-        List<String> order = List.of("0-1.9", "2.0-3.9", "4.0-5.9", "6.0-7.9", "8.0-10");
-        Map<String, Long> values = queryNamedValues(sql).stream().collect(Collectors.toMap(DashboardStatisticsDTO.NamedValue::getName, DashboardStatisticsDTO.NamedValue::getValue));
-        List<DashboardStatisticsDTO.NamedValue> result = new ArrayList<>();
-        for (String name : order) {
-            DashboardStatisticsDTO.NamedValue item = new DashboardStatisticsDTO.NamedValue();
-            item.setName(name);
-            item.setValue(values.getOrDefault(name, 0L));
-            result.add(item);
-        }
-        return result;
+        return queryNamedValues(sql);
     }
 
     private List<DashboardStatisticsDTO.NamedValue> buildYearDistribution() {
@@ -302,114 +309,95 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
                 ORDER BY item_name DESC
                 LIMIT 10
                 """;
-        List<DashboardStatisticsDTO.NamedValue> values = queryNamedValues(sql);
-        values.sort((left, right) -> left.getName().compareTo(right.getName()));
-        return values;
+        return queryNamedValues(sql);
     }
 
     private List<DashboardStatisticsDTO.NamedValue> buildRegionDistribution() {
         String sql = """
-                SELECT region AS item_name, COUNT(*) AS value
+                SELECT COALESCE(NULLIF(region, ''), 'Unknown') AS item_name, COUNT(*) AS value
                 FROM movie
-                WHERE deleted = 0 AND region IS NOT NULL AND region <> ''
-                GROUP BY region
-                ORDER BY value DESC, region ASC
+                WHERE deleted = 0
+                GROUP BY COALESCE(NULLIF(region, ''), 'Unknown')
+                ORDER BY value DESC, item_name ASC
                 """;
-        List<DashboardStatisticsDTO.NamedValue> rawValues = queryNamedValues(sql);
-        List<DashboardStatisticsDTO.NamedValue> result = new ArrayList<>();
-        long otherCount = 0L;
-        for (int index = 0; index < rawValues.size(); index++) {
-            DashboardStatisticsDTO.NamedValue value = rawValues.get(index);
-            if (index < 8) {
-                result.add(value);
-            } else {
-                otherCount += value.getValue();
-            }
+        List<DashboardStatisticsDTO.NamedValue> values = queryNamedValues(sql);
+        if (values.size() <= 8) {
+            return values;
         }
-        if (otherCount > 0) {
-            DashboardStatisticsDTO.NamedValue other = new DashboardStatisticsDTO.NamedValue();
-            other.setName("Other");
-            other.setValue(otherCount);
-            result.add(other);
-        }
-        return result;
+        List<DashboardStatisticsDTO.NamedValue> topValues = new ArrayList<>(values.subList(0, 8));
+        long other = values.subList(8, values.size()).stream().mapToLong(DashboardStatisticsDTO.NamedValue::getValue).sum();
+        DashboardStatisticsDTO.NamedValue otherItem = new DashboardStatisticsDTO.NamedValue();
+        otherItem.setName("Other");
+        otherItem.setValue(other);
+        topValues.add(otherItem);
+        return topValues;
     }
 
     private List<DashboardStatisticsDTO.MovieSpotlight> buildHotMovies() {
         String sql = """
-                SELECT m.id,
-                       m.title,
-                       m.overview,
-                       m.poster_url,
-                       m.backdrop_url,
-                       m.region,
-                       m.average_rating,
-                       m.favorite_count,
-                       m.view_count,
-                       m.release_date,
-                       GROUP_CONCAT(c.name ORDER BY c.name SEPARATOR ',') AS categories
-                FROM movie m
-                LEFT JOIN movie_category mc ON mc.movie_id = m.id
-                LEFT JOIN category c ON c.id = mc.category_id AND c.deleted = 0
-                WHERE m.deleted = 0
-                GROUP BY m.id
-                ORDER BY m.view_count DESC, m.favorite_count DESC, m.average_rating DESC, m.id DESC
+                SELECT id, title, poster_url, backdrop_url, average_rating, favorite_count, view_count
+                FROM movie
+                WHERE deleted = 0
+                ORDER BY view_count DESC, favorite_count DESC, average_rating DESC, id DESC
                 LIMIT 10
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
-            DashboardStatisticsDTO.MovieSpotlight item = new DashboardStatisticsDTO.MovieSpotlight();
-            item.setId(rs.getLong("id"));
-            item.setTitle(rs.getString("title"));
-            item.setOverview(rs.getString("overview"));
-            item.setPosterUrl(rs.getString("poster_url"));
-            item.setBackdropUrl(rs.getString("backdrop_url"));
-            item.setRegion(rs.getString("region"));
-            item.setAverageRating(rs.getBigDecimal("average_rating"));
-            item.setFavoriteCount(rs.getInt("favorite_count"));
-            item.setViewCount(rs.getInt("view_count"));
-            Date releaseDate = rs.getDate("release_date");
-            item.setReleaseYear(releaseDate == null ? null : YEAR_FORMATTER.format(releaseDate.toLocalDate()));
-            item.setCategories(splitNames(rs.getString("categories")));
-            return item;
+            DashboardStatisticsDTO.MovieSpotlight movie = new DashboardStatisticsDTO.MovieSpotlight();
+            movie.setId(rs.getLong("id"));
+            movie.setTitle(rs.getString("title"));
+            movie.setPosterUrl(rs.getString("poster_url"));
+            movie.setBackdropUrl(rs.getString("backdrop_url"));
+            movie.setAverageRating(rs.getBigDecimal("average_rating"));
+            movie.setFavoriteCount(rs.getInt("favorite_count"));
+            movie.setViewCount(rs.getInt("view_count"));
+            return movie;
         });
     }
 
-    private List<DashboardStatisticsDTO.RankingItem> buildRanking(String metricField, String metricLabel) {
-        String sql = String.format("""
+    private List<DashboardStatisticsDTO.RankingItem> buildRanking(String field, String fallbackName) {
+        String sql = """
                 SELECT id, title, poster_url, average_rating, %s AS metric_value
                 FROM movie
                 WHERE deleted = 0
                 ORDER BY %s DESC, average_rating DESC, id DESC
                 LIMIT 10
-                """, metricField, metricField);
-        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+                """.formatted(field, field);
+        List<DashboardStatisticsDTO.RankingItem> values = jdbcTemplate.query(sql, (rs, rowNum) -> {
             DashboardStatisticsDTO.RankingItem item = new DashboardStatisticsDTO.RankingItem();
             item.setId(rs.getLong("id"));
             item.setTitle(rs.getString("title"));
             item.setPosterUrl(rs.getString("poster_url"));
             item.setAverageRating(rs.getBigDecimal("average_rating"));
             item.setMetricValue(rs.getLong("metric_value"));
-            item.setMetricLabel(metricLabel);
+            item.setMetricLabel(fallbackName);
             return item;
         });
+        if (values.isEmpty()) {
+            DashboardStatisticsDTO.RankingItem placeholder = new DashboardStatisticsDTO.RankingItem();
+            placeholder.setTitle(fallbackName + "暂无数据");
+            placeholder.setMetricLabel(fallbackName);
+            placeholder.setMetricValue(0L);
+            return List.of(placeholder);
+        }
+        return values;
     }
 
-    private List<DashboardStatisticsDTO.NamedValue> queryNamedValues(String sql) {
+    private List<DashboardStatisticsDTO.NamedValue> queryNamedValues(String sql, Object... args) {
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
             DashboardStatisticsDTO.NamedValue item = new DashboardStatisticsDTO.NamedValue();
             item.setName(rs.getString("item_name"));
             item.setValue(rs.getLong("value"));
             return item;
-        });
+        }, args);
     }
 
     private Map<LocalDate, Long> queryDateValueMap(String sql, LocalDate startDate) {
         return jdbcTemplate.query(sql, rs -> {
-            Map<LocalDate, Long> data = new LinkedHashMap<>();
+            Map<LocalDate, Long> values = new LinkedHashMap<>();
             while (rs.next()) {
-                data.put(toLocalDate(rs.getDate("item_date")), rs.getLong("value"));
+                values.put(toLocalDate(rs.getDate("item_date")), rs.getLong("value"));
             }
-            return data;
+            return values;
         }, Date.valueOf(startDate));
     }
 
@@ -428,18 +416,18 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
         return dates;
     }
 
-    private List<String> splitNames(String value) {
-        if (value == null || value.isBlank()) {
+    private List<String> splitNames(String raw) {
+        if (raw == null || raw.isBlank()) {
             return List.of();
         }
-        return List.of(value.split(","));
+        return List.of(raw.split(","));
     }
 
-    private LocalDate toLocalDate(Date date) {
-        return date == null ? null : date.toLocalDate();
+    private LocalDate toLocalDate(Date value) {
+        return value == null ? null : value.toLocalDate();
     }
 
-    private LocalDateTime toLocalDateTime(Timestamp timestamp) {
-        return timestamp == null ? null : timestamp.toLocalDateTime();
+    private LocalDateTime toLocalDateTime(Timestamp value) {
+        return value == null ? null : value.toLocalDateTime();
     }
 }
