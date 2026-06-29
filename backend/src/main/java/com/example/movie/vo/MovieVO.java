@@ -29,6 +29,8 @@ public class MovieVO {
 
     @Data
     public static class PersonVO {
+        private Long id;
+        private String personType;
         private String name;
         private String originalName;
         private String profileUrl;

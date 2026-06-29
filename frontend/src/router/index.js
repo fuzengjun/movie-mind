@@ -5,6 +5,8 @@ import HomeView from '@/views/front/HomeView.vue'
 import MovieListView from '@/views/front/MovieListView.vue'
 import MovieDetailView from '@/views/front/MovieDetailView.vue'
 import MovieCastView from '@/views/front/MovieCastView.vue'
+import PersonDetailView from '@/views/front/PersonDetailView.vue'
+import PersonWorksView from '@/views/front/PersonWorksView.vue'
 import LoginView from '@/views/front/LoginView.vue'
 import DashboardView from '@/views/admin/DashboardView.vue'
 import MovieManageView from '@/views/admin/MovieManageView.vue'
@@ -19,6 +21,8 @@ const routes = [
       { path: 'movies', name: 'movies', component: MovieListView },
       { path: 'movies/:id', name: 'movie-detail', component: MovieDetailView, props: true },
       { path: 'movies/:id/cast', name: 'movie-cast', component: MovieCastView, props: true },
+      { path: 'people/:type/:id', name: 'person-detail', component: PersonDetailView, props: true },
+      { path: 'people/:type/:id/works/:sectionKey', name: 'person-works', component: PersonWorksView, props: true },
       { path: 'login', name: 'login', component: LoginView }
     ]
   },

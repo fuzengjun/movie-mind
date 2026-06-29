@@ -134,7 +134,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         LocalDate releaseDate = parseDate(textOrNull(detail, "release_date"));
         Integer runtime = detail.path("runtime").isNumber() ? detail.path("runtime").asInt() : null;
         String region = extractRegion(detail.path("production_countries"));
-        String language = textOrNull(detail, "original_language");
+        String language = extractLanguages(detail.path("spoken_languages"), textOrNull(detail, "original_language"));
         BigDecimal rating = decimal(detail.path("vote_average").asDouble(0));
         int voteCount = detail.path("vote_count").asInt(0);
         int viewCount = Math.max(0, (int) Math.round(detail.path("popularity").asDouble(0) * 100));
@@ -291,6 +291,22 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             case 3 -> "非二元";
             default -> null;
         };
+    }
+
+    private String extractLanguages(JsonNode spokenLanguages, String originalLanguage) {
+        Set<String> languages = new LinkedHashSet<>();
+        if (StringUtils.hasText(originalLanguage)) {
+            languages.add(originalLanguage);
+        }
+        if (spokenLanguages != null && spokenLanguages.isArray()) {
+            for (JsonNode languageNode : spokenLanguages) {
+                String code = textOrNull(languageNode, "iso_639_1");
+                if (StringUtils.hasText(code)) {
+                    languages.add(code);
+                }
+            }
+        }
+        return languages.isEmpty() ? null : String.join(",", languages);
     }
 
     private String extractRegion(JsonNode countries) {

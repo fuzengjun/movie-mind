@@ -1,6 +1,5 @@
 <template>
   <section class="cast-view-container space-y-4">
-    <!-- 返回按钮，极简的淡色返回链接（始终显示，使用 scoped 样式确保不被导航栏遮挡） -->
     <div>
       <RouterLink 
         :to="`/movies/${id}`" 
@@ -11,7 +10,6 @@
       </RouterLink>
     </div>
 
-    <!-- 影片及演职人员标题区 -->
     <div v-if="movie" class="space-y-6">
       <div class="px-1 select-none">
         <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-[var(--text-muted)] uppercase">
@@ -22,10 +20,14 @@
         </h1>
       </div>
 
-      <!-- 演职人员全部网格排布 (大屏幕下固定一行展示 8 个，且头像尺寸进一步加大) -->
       <div v-if="castAndCrew && castAndCrew.length" class="cast-grid">
-        <div v-for="person in castAndCrew" :key="person.name + '-' + person.roleName" class="cast-card">
-          <!-- 圆形头像 -->
+        <component
+          :is="personLink(person) ? RouterLink : 'div'"
+          v-for="person in castAndCrew"
+          :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
+          :to="personLink(person)"
+          class="cast-card"
+        >
           <div class="avatar-wrapper">
             <img 
               v-if="person.profileUrl" 
@@ -33,23 +35,20 @@
               :alt="person.name" 
               class="avatar-img"
               loading="lazy" 
-          />
-            <!-- 默认占位头像 -->
+            />
             <div v-else class="avatar-placeholder">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 opacity-60">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
               </svg>
             </div>
           </div>
-          <!-- 名字 -->
           <div class="cast-name" :title="person.name">
             {{ person.name }}
           </div>
-          <!-- 角色或职责 -->
           <div class="cast-role" :title="person.roleName">
             {{ person.roleName }}
           </div>
-        </div>
+        </component>
       </div>
       
       <div v-else class="text-center py-12 text-[var(--text-muted)] text-sm">
@@ -57,7 +56,6 @@
       </div>
     </div>
 
-    <!-- 加载状态 -->
     <div v-else class="text-center py-20 text-[var(--text-muted)] text-sm">
       正在加载演职人员信息...
     </div>
@@ -66,6 +64,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { getMovieDetail } from '@/api/movie'
 import { mockMovies } from '@/utils/mockData'
 
@@ -78,11 +77,16 @@ const props = defineProps({
 
 const movie = ref(null)
 
-// 合并导演与演员数据，构建统一的演职人员列表
+function personLink(person) {
+  if (!person || !person.id || !person.personType) {
+    return ''
+  }
+  return `/people/${person.personType}/${person.id}`
+}
+
 const castAndCrew = computed(() => {
   const list = []
   if (movie.value) {
-    // 1. 处理导演
     if (Array.isArray(movie.value.directors)) {
       movie.value.directors.forEach((d) => {
         if (typeof d === 'string') {
@@ -94,6 +98,8 @@ const castAndCrew = computed(() => {
           })
         } else if (d && typeof d === 'object') {
           list.push({
+            id: d.id || null,
+            personType: d.personType || 'director',
             name: d.name || '',
             originalName: d.originalName || '',
             profileUrl: d.profileUrl || '',
@@ -116,7 +122,6 @@ const castAndCrew = computed(() => {
       })
     }
 
-    // 2. 处理演员
     if (Array.isArray(movie.value.actors)) {
       movie.value.actors.forEach((a) => {
         if (typeof a === 'string') {
@@ -128,6 +133,8 @@ const castAndCrew = computed(() => {
           })
         } else if (a && typeof a === 'object') {
           list.push({
+            id: a.id || null,
+            personType: a.personType || 'actor',
             name: a.name || '',
             originalName: a.originalName || '',
             profileUrl: a.profileUrl || '',
@@ -167,7 +174,7 @@ onMounted(async () => {
 
 <style scoped>
 .cast-view-container {
-  padding-top: 40px; /* 大幅度上调，贴近导航栏 */
+  padding-top: 40px;
   padding-bottom: 48px;
 }
 
@@ -177,27 +184,27 @@ onMounted(async () => {
 
 .cast-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 移动端默认 3 列 */
+  grid-template-columns: repeat(3, 1fr);
   gap: 32px 12px;
   padding: 4px;
 }
 
 @media (min-width: 576px) {
   .cast-grid {
-    grid-template-columns: repeat(4, 1fr); /* 平板/小屏 4 列 */
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
 @media (min-width: 768px) {
   .cast-grid {
-    grid-template-columns: repeat(6, 1fr); /* 中屏 6 列 */
+    grid-template-columns: repeat(6, 1fr);
   }
 }
 
 @media (min-width: 1024px) {
   .cast-grid {
-    grid-template-columns: repeat(8, 1fr); /* 铺满屏幕时一行只能显示 8 个 */
-    gap: 32px 12px; /* 减小横向间距，留给大头像更多空间 */
+    grid-template-columns: repeat(8, 1fr);
+    gap: 32px 12px;
   }
 }
 
@@ -206,6 +213,7 @@ onMounted(async () => {
   flex-direction: column;
   align-items: center;
   text-align: center;
+  text-decoration: none;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   width: 100%;
 }
@@ -215,7 +223,7 @@ onMounted(async () => {
 }
 
 .avatar-wrapper {
-  width: 140px; /* 头像尺寸进一步加大，几乎撑满整列 */
+  width: 140px;
   height: 140px;
   border-radius: 50%;
   overflow: hidden;
@@ -227,7 +235,6 @@ onMounted(async () => {
   position: relative;
 }
 
-/* 适配中等以下屏幕，头像自适应缩小 */
 @media (max-width: 1280px) {
   .avatar-wrapper {
     width: 120px;

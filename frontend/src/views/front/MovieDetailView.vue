@@ -83,79 +83,38 @@
       </aside>
     </div>
 
-    <!-- 底部：Apple TV 标准三列等宽网格参数区 -->
-    <div class="info-grid-three-cols">
-      <!-- 第一列：基本信息 (Information) -->
-      <div class="space-y-4">
-        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
-          基本信息
-        </h4>
-        <div class="space-y-3 text-xs text-[var(--text-secondary)]">
-          <div>
-            <p class="text-[var(--text-muted)] font-medium">原标题</p>
-            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.originalTitle || movie.title }}</p>
+    <!-- 影片资料：仅展示数据库或上游数据源能够确认的信息 -->
+    <div class="info-grid-three-cols movie-info-grid">
+      <section class="movie-info-section movie-info-primary">
+        <h2 class="movie-info-title">基本信息</h2>
+        <div class="movie-info-facts">
+          <div class="movie-info-item movie-info-item-wide">
+            <p class="movie-info-label">原标题</p>
+            <p class="movie-info-value">{{ movie.originalTitle || movie.title }}</p>
           </div>
-          <div>
-            <p class="text-[var(--text-muted)] font-medium">上映地区</p>
-            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.region || '未提供' }}</p>
+          <div class="movie-info-item">
+            <p class="movie-info-label">上映地区</p>
+            <p class="movie-info-value">{{ movie.region || '未提供' }}</p>
           </div>
-          <div>
-            <p class="text-[var(--text-muted)] font-medium">上映年份</p>
-            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">{{ movie.releaseDate ? String(movie.releaseDate).slice(0, 4) : '未知' }}</p>
+          <div class="movie-info-item">
+            <p class="movie-info-label">上映年份</p>
+            <p class="movie-info-value">{{ movie.releaseDate ? String(movie.releaseDate).slice(0, 4) : '未知' }}</p>
           </div>
-        </div>
-      </div>
-
-      <!-- 第二列：语言音频 (Languages) -->
-      <div class="space-y-4">
-        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
-          语言与字幕
-        </h4>
-        <div class="space-y-3 text-xs text-[var(--text-secondary)]">
-          <div>
-            <p class="text-[var(--text-muted)] font-medium">音频轨道 (Audio)</p>
-            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
-              {{ movie.language || '英语' }} (原声)
-            </p>
+          <div class="movie-info-item">
+            <p class="movie-info-label">片长</p>
+            <p class="movie-info-value">{{ movie.runtime ? `${movie.runtime} 分钟` : '未提供' }}</p>
           </div>
-          <div>
-            <p class="text-[var(--text-muted)] font-medium">字幕支持 (Subtitles)</p>
-            <p class="mt-0.5 text-sm font-semibold text-[var(--text-primary)]">
-              简体中文、繁体中文、英文、日文
-            </p>
+          <div class="movie-info-item">
+            <p class="movie-info-label">影片语言</p>
+            <p class="movie-info-value">{{ spokenLanguagesText }}</p>
+          </div>
+          <div class="movie-info-item movie-info-item-wide">
+            <p class="movie-info-label">影片分类</p>
+            <p class="movie-info-value">{{ (movie.categories || []).join('、') || '未提供' }}</p>
           </div>
         </div>
-      </div>
-
-      <!-- 第三列：无障碍与画质 (Accessibility) -->
-      <div class="space-y-4">
-        <h4 class="text-xs font-bold tracking-widest text-[var(--text-primary)] uppercase border-b border-[var(--border-soft)] pb-2">
-          无障碍与画质
-        </h4>
-        <div class="space-y-4">
-          <!-- 辅助微标 -->
-          <div class="flex flex-wrap gap-2 pt-1">
-            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
-              CC
-            </span>
-            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
-              AD
-            </span>
-            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
-              4K UHD
-            </span>
-            <span class="rounded bg-[var(--surface-primary)] border border-[var(--border-soft)] px-2 py-1 text-[9px] font-extrabold text-[var(--text-primary)] tracking-wide">
-              DOLBY VISION
-            </span>
-          </div>
-          
-          <p class="text-xs leading-relaxed text-[var(--text-muted)]">
-            本片支持 Closed Captions (CC) 辅助字幕与 Audio Descriptions (AD) 视障语音双重无障碍支持，并提供 4K 超高清画质输出。
-          </p>
-        </div>
-      </div>
+      </section>
     </div>
-
     <!-- 演职人员 -->
     <CastRail 
       v-if="castAndCrew && castAndCrew.length" 
@@ -204,6 +163,30 @@ const actorsString = computed(() => {
 
 const relatedMovies = computed(() => relatedSource.value.filter((item) => item.id !== movie.value?.id).slice(0, 8))
 
+const spokenLanguagesText = computed(() => {
+  const values = normalizeList(movie.value?.spokenLanguages || movie.value?.language)
+  if (!values.length) return '暂无语言信息'
+  return values.map((language) => localizeLanguage(language)).join('、')
+})
+
+function normalizeList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean)
+  }
+  if (typeof value !== 'string' || !value.trim()) return []
+  return value.split(/[,，、/]/).map((item) => item.trim()).filter(Boolean)
+}
+
+function localizeLanguage(language) {
+  const value = String(language).trim()
+  if (!/^[a-z]{2,3}(?:-[A-Z]{2})?$/i.test(value)) return value
+  try {
+    return new Intl.DisplayNames(['zh-CN'], { type: 'language' }).of(value) || value
+  } catch {
+    return value
+  }
+}
+
 // 合并导演与演员数据，构建统一的演职人员列表
 const castAndCrew = computed(() => {
   const list = []
@@ -220,6 +203,8 @@ const castAndCrew = computed(() => {
           })
         } else if (d && typeof d === 'object') {
           list.push({
+            id: d.id || null,
+            personType: d.personType || 'director',
             name: d.name || '',
             originalName: d.originalName || '',
             profileUrl: d.profileUrl || '',
@@ -254,6 +239,8 @@ const castAndCrew = computed(() => {
           })
         } else if (a && typeof a === 'object') {
           list.push({
+            id: a.id || null,
+            personType: a.personType || 'actor',
             name: a.name || '',
             originalName: a.originalName || '',
             profileUrl: a.profileUrl || '',
@@ -324,4 +311,77 @@ onMounted(() => loadMovie())
   opacity: 0.45;
   user-select: none;
 }
-</style>
+
+.movie-info-grid {
+  display: block;
+  padding: 28px 32px 30px;
+}
+
+.movie-info-section {
+  min-width: 0;
+}
+
+.movie-info-title {
+  margin: 0 0 20px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--border-soft);
+  color: var(--text-primary);
+  font-size: 1.3rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  transform: translate(-8px, -6px);
+}
+
+.movie-info-facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 22px 28px;
+}
+
+.movie-info-item {
+  min-width: 0;
+}
+
+.movie-info-item-wide {
+  grid-column: span 2;
+}
+
+.movie-info-item p {
+  margin: 0;
+}
+
+.movie-info-label {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.movie-info-value {
+  overflow-wrap: anywhere;
+  margin-top: 4px !important;
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .movie-info-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .movie-info-grid {
+    padding: 24px 22px;
+  }
+
+  .movie-info-facts {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .movie-info-item-wide {
+    grid-column: auto;
+  }
+}</style>

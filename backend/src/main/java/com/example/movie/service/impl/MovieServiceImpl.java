@@ -116,7 +116,7 @@ public class MovieServiceImpl implements MovieService {
 
     private List<MovieVO.PersonVO> loadActors(Long movieId) {
         String sql = """
-                SELECT a.name, a.original_name, a.profile_url, ma.role_name
+                SELECT a.id, 'actor' AS person_type, a.name, a.original_name, a.profile_url, ma.role_name
                 FROM movie_actor ma
                 INNER JOIN actor a ON a.id = ma.actor_id AND a.deleted = 0
                 WHERE ma.movie_id = ?
@@ -127,7 +127,7 @@ public class MovieServiceImpl implements MovieService {
 
     private List<MovieVO.PersonVO> loadDirectors(Long movieId) {
         String sql = """
-                SELECT d.name, d.original_name, d.profile_url, NULL AS role_name
+                SELECT d.id, 'director' AS person_type, d.name, d.original_name, d.profile_url, NULL AS role_name
                 FROM movie_director md
                 INNER JOIN director d ON d.id = md.director_id AND d.deleted = 0
                 WHERE md.movie_id = ?
@@ -138,6 +138,8 @@ public class MovieServiceImpl implements MovieService {
 
     private MovieVO.PersonVO mapPerson(ResultSet rs) throws SQLException {
         MovieVO.PersonVO person = new MovieVO.PersonVO();
+        person.setId(rs.getLong("id"));
+        person.setPersonType(rs.getString("person_type"));
         person.setName(rs.getString("name"));
         person.setOriginalName(rs.getString("original_name"));
         person.setProfileUrl(rs.getString("profile_url"));

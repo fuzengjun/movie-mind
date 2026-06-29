@@ -27,6 +27,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/movies/**",
+                                "/api/people/**",
                                 "/api/admin/statistics",
                                 "/api/admin/movies",
                                 "/api/admin/users",
