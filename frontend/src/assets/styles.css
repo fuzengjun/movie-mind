@@ -517,6 +517,7 @@ html[data-theme='light'] .pill-button-premium:hover {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
+  line-clamp: 1;
 }
 .backdrop-blur-md { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .hover\:opacity-90:hover { opacity: 0.9; }

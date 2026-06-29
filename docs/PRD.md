@@ -75,7 +75,7 @@
 | Vue Router   | 前端路由管理    |
 | Pinia        | 全局状态管理    |
 | Element Plus | 后台管理界面组件库 |
-| Tailwind CSS | 页面样式和布局优化 |
+| CSS Variables + Plain CSS | 页面样式、主题变量与布局实现 |
 | Axios        | 前后端接口请求   |
 | ECharts      | 数据统计图表展示  |
 | Vite         | 前端项目构建工具  |
@@ -1774,7 +1774,7 @@ backend
 1. 前后端分离架构。
 2. Spring Boot 后端分层设计。
 3. Vue + Element Plus 后台管理页面。
-4. Tailwind CSS 优化前台页面展示效果。
+4. 使用 CSS 变量与普通 CSS 优化前台页面展示效果。
 5. MySQL 多表关系设计。
 6. TMDB API 自动导入影视数据。
 7. Redis 缓存热门影视和排行榜。
@@ -1870,9 +1870,11 @@ backend
 
 ## 18. 项目总结
 
-智能影视信息管理系统以影视作品信息管理为核心，结合用户行为记录、个性化推荐、第三方数据导入和后台数据统计，实现了一个较完整的 Web 信息管理系统。系统采用 Vue 3、Element Plus、Tailwind CSS 构建前端页面，采用 Spring Boot、MyBatis-Plus、MySQL、Redis 构建后端服务，整体技术路线成熟，适合课程设计实现。
+智能影视信息管理系统以影视作品信息管理为核心，结合用户行为记录、个性化推荐、第三方数据导入和后台数据统计，实现了一个较完整的 Web 信息管理系统。系统采用 Vue 3、Element Plus、CSS 变量与普通 CSS 构建前端页面，采用 Spring Boot、MyBatis-Plus、MySQL、Redis 构建后端服务，整体技术路线成熟，适合课程设计实现。
 
 系统不仅包含传统管理系统所需的增删改查、分页查询、权限控制和数据统计功能，还加入了 TMDB API 自动导入和协同过滤推荐算法，使系统具备一定智能化特征，能够体现“智能信息系统综合课程设计”的课程要求。
+
+
 
 
 
