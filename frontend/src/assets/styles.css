@@ -591,3 +591,39 @@ html[data-theme='light'] .pill-button-premium:hover {
     gap: 16px;
   }
 }
+
+/* 浅色模式与深色模式下网页文本选中高亮颜色优化 */
+::selection {
+  background: rgba(0, 122, 255, 0.2) !important; /* 使用高对比度的苹果蓝作为选区背景 */
+  color: inherit !important;
+}
+html[data-theme='dark'] ::selection {
+  background: rgba(0, 199, 255, 0.3) !important;
+}
+
+/* 确保药丸按钮选中态在浅色模式下有绝对清晰的强对比度（白字黑底） */
+html[data-theme='light'] .pill-button.is-active,
+html[data-theme='light'] .pill-button-premium.is-active {
+  background: #1d1d1f !important;
+  color: #ffffff !important;
+}
+
+/* Element Plus 选中项与高亮项视觉对比度优化 */
+.el-select-dropdown__item.is-selected {
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #1d1d1f !important;
+  font-weight: 700 !important;
+}
+html[data-theme='dark'] .el-select-dropdown__item.is-selected {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item:hover {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme='dark'] .el-select-dropdown__item.hover,
+html[data-theme='dark'] .el-select-dropdown__item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
