@@ -20,5 +20,7 @@
 
 如果不想配环境变量，也可以参考 `backend/src/main/resources/application-local.example.yml`，复制成 `application-local.yml` 后按本机环境修改。
 
+## TMDB 导入数据
 
-
+```shell
+Invoke-RestMethod -Method Post -Uri "http://localhost:8080/api/admin/tmdb/import/popular?limit=50"

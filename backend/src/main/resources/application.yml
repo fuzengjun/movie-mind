@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: backend
+  config:
+    import: optional:classpath:application-local.yml
   datasource:
     url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:3306}/${DB_NAME:movie_mind}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${DB_USERNAME:movie_mind}
