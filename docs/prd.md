@@ -1539,7 +1539,7 @@ Redis 主要用于缓存高频访问数据，提高系统响应速度。
 ## 12.1 前端目录结构
 
 ```text
-movie-system-web
+frontend
 ├── src
 │   ├── api
 │   │   ├── auth.js
@@ -1575,7 +1575,7 @@ movie-system-web
 ## 12.2 后端目录结构
 
 ```text
-movie-system-server
+backend
 ├── src/main/java/com/example/movie
 │   ├── MovieSystemApplication.java
 │   ├── common
@@ -1625,7 +1625,7 @@ movie-system-server
 2. 绘制系统用例图。
 3. 设计数据库表。
 4. 设计前后端接口。
-5. 搭建项目基础环境。
+5. 搭建项目基础环境（支持 Windows 本地开发与 WSL Docker 本地数据库环境）。
 
 交付物：
 
@@ -1872,3 +1872,7 @@ movie-system-server
 智能影视信息管理系统以影视作品信息管理为核心，结合用户行为记录、个性化推荐、第三方数据导入和后台数据统计，实现了一个较完整的 Web 信息管理系统。系统采用 Vue 3、Element Plus、Tailwind CSS 构建前端页面，采用 Spring Boot、MyBatis-Plus、MySQL、Redis 构建后端服务，整体技术路线成熟，适合课程设计实现。
 
 系统不仅包含传统管理系统所需的增删改查、分页查询、权限控制和数据统计功能，还加入了 TMDB API 自动导入和协同过滤推荐算法，使系统具备一定智能化特征，能够体现“智能信息系统综合课程设计”的课程要求。
+
+
+
+

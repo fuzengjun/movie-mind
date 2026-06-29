@@ -1,0 +1,17 @@
+import request from '@/utils/request'
+
+export function getAdminMovies(params) {
+  return request({
+    url: '/admin/movies',
+    method: 'get',
+    params
+  })
+}
+
+export function getAdminUsers(params) {
+  return request({
+    url: '/admin/users',
+    method: 'get',
+    params
+  })
+}
