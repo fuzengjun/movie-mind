@@ -30,6 +30,7 @@ public class SecurityConfig {
                                 "/api/admin/statistics",
                                 "/api/admin/movies",
                                 "/api/admin/users",
+                                "/api/admin/tmdb/import/popular",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**"
                         ).permitAll()

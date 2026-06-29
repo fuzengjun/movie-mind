@@ -11,3 +11,8 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+
+tmdb:
+  read-access-token: YOUR_TMDB_READ_ACCESS_TOKEN
+  base-url: https://api.themoviedb.org/3
+  image-base-url: https://image.tmdb.org/t/p/w780
