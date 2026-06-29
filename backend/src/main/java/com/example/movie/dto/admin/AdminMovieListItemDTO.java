@@ -1,4 +1,4 @@
-package com.example.movie.vo;
+package com.example.movie.dto.admin;
 
 import lombok.Data;
 
@@ -7,21 +7,16 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Data
-public class MovieVO {
+public class AdminMovieListItemDTO {
 
     private Long id;
     private String title;
-    private String originalTitle;
-    private String overview;
     private String posterUrl;
-    private String backdropUrl;
     private String region;
-    private String language;
     private LocalDate releaseDate;
-    private Integer runtime;
     private BigDecimal averageRating;
-    private BigDecimal tmdbRating;
     private Integer favoriteCount;
     private Integer viewCount;
+    private Integer status;
     private List<String> categories;
 }

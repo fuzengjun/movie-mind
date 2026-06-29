@@ -1,7 +1,7 @@
 <template>
-  <div class="page-shell">
+  <div class="page-shell pb-12">
     <Navbar />
-    <main class="mx-auto max-w-7xl px-4 py-8">
+    <main class="page-frame space-y-10 pb-10 pt-6 md:pt-8">
       <router-view />
     </main>
   </div>

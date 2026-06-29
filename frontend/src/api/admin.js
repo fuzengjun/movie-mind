@@ -1,5 +1,13 @@
 import request from '@/utils/request'
 
+export function getAdminStatistics(range = 30) {
+  return request({
+    url: '/admin/statistics',
+    method: 'get',
+    params: { range }
+  })
+}
+
 export function getAdminMovies(params) {
   return request({
     url: '/admin/movies',

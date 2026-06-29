@@ -16,7 +16,14 @@ request.interceptors.request.use((config) => {
 })
 
 request.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    const payload = response.data
+    if (payload?.code !== 200) {
+      ElMessage.error(payload?.message || '请求失败，请稍后重试')
+      return Promise.reject(new Error(payload?.message || 'Request failed'))
+    }
+    return payload
+  },
   (error) => {
     ElMessage.error(error.response?.data?.message || '请求失败，请稍后重试')
     return Promise.reject(error)

@@ -5,6 +5,9 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import './assets/styles.css'
+import { setupThemeSync } from './utils/theme'
+
+setupThemeSync()
 
 const app = createApp(App)
 

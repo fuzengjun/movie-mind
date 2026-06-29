@@ -1,24 +1,23 @@
 package com.example.movie.controller.admin;
 
 import com.example.movie.common.Result;
-import com.example.movie.dto.admin.AdminUserListItemDTO;
+import com.example.movie.dto.admin.DashboardStatisticsDTO;
 import com.example.movie.service.AdminStatisticsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/admin/users")
+@RequestMapping("/api/admin/statistics")
 @RequiredArgsConstructor
-public class AdminUserController {
+public class AdminStatisticsController {
 
     private final AdminStatisticsService adminStatisticsService;
 
     @GetMapping
-    public Result<List<AdminUserListItemDTO>> list() {
-        return Result.success(adminStatisticsService.listAdminUsers());
+    public Result<DashboardStatisticsDTO> overview(@RequestParam(required = false) Integer range) {
+        return Result.success(adminStatisticsService.getDashboardStatistics(range));
     }
 }
