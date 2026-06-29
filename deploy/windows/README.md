@@ -1,11 +1,15 @@
 # Windows 本地数据库环境
 
-这套方案适用于直接在 Windows 本机安装 MySQL 和 Redis 的同学，不需要 WSL，也不需要 Docker。
+这套方案适用于直接在 Windows 本机安装 MySQL 和 Redis。
 
 ## 推荐版本
 
 - MySQL 8.4 LTS 或更新稳定版
 - Redis 7.x 或更新稳定版
+
+## 前端包管理说明
+
+- 团队成员日常开发默认使用 `npm`
 
 ## 启动步骤
 
@@ -57,16 +61,14 @@ mysql -u root -p movie_mind < deploy/shared/mysql/001_init_movie_mind.sql
 
 ### 6. 启动前端
 
-在 `frontend/` 下使用 `pnpm`：
+在 `frontend/` 下使用 `npm`：
 
 ```bash
-pnpm install
-pnpm dev
+npm install
+npm run dev
 ```
 
 ## 注意事项
 
 - 如果 MySQL 账号不是 `movie_mind`，请同步修改后端连接配置。
 - 如果 Redis 不是默认端口，也要同步修改后端配置。
-- 初始化 SQL 与 WSL 方案共用，避免两套表结构不一致。
-

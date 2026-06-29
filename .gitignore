@@ -34,5 +34,9 @@ tmp/
 temp/
 *.pid
 
+# Dependencies
+node_modules/
+pnpm-lock.yaml
+
 # Agents
 AGENTS.md
