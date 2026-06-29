@@ -236,7 +236,9 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             return;
         }
 
-        String region = providerResults.has("CN") ? "CN" : providerResults.has("US") ? "US" : null;
+        String region = hasWatchProviders(providerResults.path("CN"))
+                ? "CN"
+                : hasWatchProviders(providerResults.path("US")) ? "US" : null;
         if (region == null) {
             return;
         }
@@ -264,6 +266,18 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                 );
             }
         }
+    }
+
+    private boolean hasWatchProviders(JsonNode regionProviders) {
+        if (regionProviders == null || !regionProviders.isObject()) {
+            return false;
+        }
+        for (String accessType : List.of("flatrate", "free", "ads", "rent", "buy")) {
+            if (regionProviders.path(accessType).isArray() && !regionProviders.path(accessType).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void syncCredits(Long movieId, JsonNode credits) {
