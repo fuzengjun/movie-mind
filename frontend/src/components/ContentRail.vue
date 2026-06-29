@@ -1,12 +1,24 @@
 <template>
   <section class="space-y-4">
-    <div v-if="title || eyebrow || description" class="flex items-end justify-between gap-4">
+    <!-- 标题与副标题 -->
+    <div v-if="title || eyebrow || description" class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 px-1">
       <div>
-        <p v-if="eyebrow" class="section-kicker text-xs">{{ eyebrow }}</p>
-        <h2 v-if="title" class="mt-2 text-2xl font-semibold tracking-tight">{{ title }}</h2>
+        <!-- 小分类标签 -->
+        <p v-if="eyebrow" class="section-kicker text-[10px] font-bold tracking-[0.2em] text-[var(--text-secondary)] uppercase">
+          {{ eyebrow }}
+        </p>
+        <!-- 主标题 -->
+        <h2 v-if="title" class="mt-1 text-xl font-bold tracking-tight md:text-2xl text-[var(--text-primary)]">
+          {{ title }}
+        </h2>
       </div>
-      <p v-if="description" class="hidden max-w-xl text-right text-sm text-[var(--text-muted)] md:block">{{ description }}</p>
+      <!-- 描述文字 -->
+      <p v-if="description" class="hidden max-w-md text-left md:text-right text-xs font-medium text-[var(--text-muted)] md:block">
+        {{ description }}
+      </p>
     </div>
+    
+    <!-- 内容滚动滑轨 -->
     <div class="content-rail">
       <MovieCard v-for="movie in movies" :key="movie.id || movie.title" :movie="movie" />
     </div>

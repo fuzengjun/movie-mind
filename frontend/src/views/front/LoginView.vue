@@ -1,22 +1,55 @@
 <template>
-  <section class="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-    <div class="space-y-5">
-      <p class="section-kicker text-xs">Sign In</p>
-      <h1 class="text-4xl font-semibold tracking-tight md:text-6xl">以影院入口的方式进入系统</h1>
-      <p class="max-w-xl text-base text-[var(--text-secondary)] md:text-lg">登录页保持 Apple TV 风格的轻量感，不堆砌大表单盒子，让操作集中且沉浸。</p>
+  <section class="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center min-h-[480px] pt-12 md:pt-20">
+    <!-- 左侧标题与描述 -->
+    <div class="space-y-6 text-left">
+      <p class="section-kicker text-[10px] tracking-widest uppercase">Sign In</p>
+      <h1 class="text-4xl font-extrabold tracking-tight text-[var(--text-primary)] md:text-5xl lg:text-6xl leading-[1.15]">
+        进入智能影音视界
+      </h1>
+      <p class="max-w-md text-sm leading-relaxed text-[var(--text-secondary)] md:text-base">
+        登录页保持流媒体影院风格的极简轻量感，摒弃繁杂的大表单设计，让每一次交互都自然、高效且沉浸。
+      </p>
     </div>
 
-    <div class="surface-card p-6 md:p-8">
-      <el-form label-position="top" @submit.prevent="handleLogin">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="请输入用户名" />
+    <!-- 右侧磨砂玻璃登录表单 -->
+    <div class="surface-card p-6 md:p-10">
+      <el-form label-position="top" @submit.prevent="handleLogin" class="space-y-4">
+        <el-form-item label="用户名" class="el-form-item-premium">
+          <el-input 
+            v-model="form.username" 
+            placeholder="请输入您的用户名" 
+            class="premium-input"
+          />
         </el-form-item>
-        <el-form-item label="密码">
-          <el-input v-model="form.password" placeholder="请输入密码" show-password type="password" />
+        
+        <el-form-item label="密码" class="el-form-item-premium">
+          <el-input 
+            v-model="form.password" 
+            placeholder="请输入密码" 
+            show-password 
+            type="password" 
+            class="premium-input"
+          />
         </el-form-item>
-        <div class="mt-6 flex gap-3">
-          <el-button type="primary" size="large" :loading="submitting" @click="handleLogin">登录</el-button>
-          <el-button size="large" @click="fillDemo">使用示例账户</el-button>
+        
+        <!-- 按钮排布 -->
+        <div class="mt-8 flex flex-col sm:flex-row gap-3 pt-2">
+          <button 
+            type="submit" 
+            :disabled="submitting"
+            @click.prevent="handleLogin" 
+            class="flex-1 rounded-full bg-[var(--text-primary)] px-6 py-3 text-sm font-semibold text-[var(--bg-primary)] transition duration-200 hover:opacity-90 active:scale-[0.98]"
+          >
+            {{ submitting ? '正在验证...' : '登录' }}
+          </button>
+          
+          <button 
+            type="button"
+            @click="fillDemo" 
+            class="flex-1 rounded-full bg-[var(--surface-secondary)] border border-[var(--border-soft)] px-6 py-3 text-sm font-semibold text-[var(--text-primary)] transition duration-200 hover:bg-[var(--border-soft)] active:scale-[0.98]"
+          >
+            使用示例账户
+          </button>
         </div>
       </el-form>
     </div>
@@ -44,14 +77,52 @@ function fillDemo() {
 }
 
 async function handleLogin() {
+  if (!form.username || !form.password) {
+    ElMessage.warning('请完整填写用户名和密码')
+    return
+  }
   submitting.value = true
   try {
     const response = await login(form)
     userStore.setToken(response.data?.token || 'demo-token')
     ElMessage.success('已进入管理员视角')
     router.push('/admin')
+  } catch (error) {
+    ElMessage.error(error.response?.data?.message || '登录失败，请检查账号密码')
   } finally {
     submitting.value = false
   }
 }
 </script>
+
+<style scoped>
+/* 深度定制表单标签字号和颜色，符合流媒体精细化要求 */
+:deep(.el-form-item__label) {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  color: var(--text-secondary) !important;
+  padding-bottom: 6px !important;
+  margin-bottom: 0 !important;
+}
+
+:deep(.el-input__wrapper) {
+  padding: 8px 16px !important;
+  background-color: var(--surface-secondary) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease !important;
+}
+
+:deep(.el-input__wrapper.is-focus) {
+  border-color: var(--text-primary) !important;
+  background-color: var(--bg-secondary) !important;
+}
+
+:deep(.el-input__inner) {
+  font-size: 14px !important;
+  color: var(--text-primary) !important;
+}
+</style>
