@@ -1,0 +1,300 @@
+<template>
+  <section class="cast-view-container space-y-4">
+    <!-- 返回按钮，极简的淡色返回链接（始终显示，使用 scoped 样式确保不被导航栏遮挡） -->
+    <div>
+      <RouterLink 
+        :to="`/movies/${id}`" 
+        class="back-link inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-85 no-underline select-none transition"
+      >
+        <span class="text-base font-bold">&lt;</span>
+        <span>返回</span>
+      </RouterLink>
+    </div>
+
+    <!-- 影片及演职人员标题区 -->
+    <div v-if="movie" class="space-y-6">
+      <div class="px-1 select-none">
+        <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-[var(--text-muted)] uppercase">
+          Cast & Crew
+        </p>
+        <h1 class="mt-1 text-2xl font-bold tracking-tight md:text-4xl text-[var(--text-primary)]">
+          {{ movie.title }} 演职人员
+        </h1>
+      </div>
+
+      <!-- 演职人员全部网格排布 (大屏幕下固定一行展示 8 个，且头像尺寸进一步加大) -->
+      <div v-if="castAndCrew && castAndCrew.length" class="cast-grid">
+        <div v-for="person in castAndCrew" :key="person.name + '-' + person.roleName" class="cast-card">
+          <!-- 圆形头像 -->
+          <div class="avatar-wrapper">
+            <img 
+              v-if="person.profileUrl" 
+              :src="person.profileUrl" 
+              :alt="person.name" 
+              class="avatar-img"
+              loading="lazy" 
+          />
+            <!-- 默认占位头像 -->
+            <div v-else class="avatar-placeholder">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 opacity-60">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              </svg>
+            </div>
+          </div>
+          <!-- 名字 -->
+          <div class="cast-name" :title="person.name">
+            {{ person.name }}
+          </div>
+          <!-- 角色或职责 -->
+          <div class="cast-role" :title="person.roleName">
+            {{ person.roleName }}
+          </div>
+        </div>
+      </div>
+      
+      <div v-else class="text-center py-12 text-[var(--text-muted)] text-sm">
+        暂无演职人员信息
+      </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-else class="text-center py-20 text-[var(--text-muted)] text-sm">
+      正在加载演职人员信息...
+    </div>
+  </section>
+</template>
+
+<script setup>
+import { computed, onMounted, ref } from 'vue'
+import { getMovieDetail } from '@/api/movie'
+import { mockMovies } from '@/utils/mockData'
+
+const props = defineProps({
+  id: {
+    type: [Number, String],
+    required: true
+  }
+})
+
+const movie = ref(null)
+
+// 合并导演与演员数据，构建统一的演职人员列表
+const castAndCrew = computed(() => {
+  const list = []
+  if (movie.value) {
+    // 1. 处理导演
+    if (Array.isArray(movie.value.directors)) {
+      movie.value.directors.forEach((d) => {
+        if (typeof d === 'string') {
+          list.push({
+            name: d,
+            originalName: '',
+            profileUrl: '',
+            roleName: '导演'
+          })
+        } else if (d && typeof d === 'object') {
+          list.push({
+            name: d.name || '',
+            originalName: d.originalName || '',
+            profileUrl: d.profileUrl || '',
+            roleName: d.roleName || '导演'
+          })
+        }
+      })
+    } else if (typeof movie.value.directors === 'string' && movie.value.directors.trim() !== '') {
+      const names = movie.value.directors.split(/[,/，、]/)
+      names.forEach((name) => {
+        const trimmed = name.trim()
+        if (trimmed) {
+          list.push({
+            name: trimmed,
+            originalName: '',
+            profileUrl: '',
+            roleName: '导演'
+          })
+        }
+      })
+    }
+
+    // 2. 处理演员
+    if (Array.isArray(movie.value.actors)) {
+      movie.value.actors.forEach((a) => {
+        if (typeof a === 'string') {
+          list.push({
+            name: a,
+            originalName: '',
+            profileUrl: '',
+            roleName: '演员'
+          })
+        } else if (a && typeof a === 'object') {
+          list.push({
+            name: a.name || '',
+            originalName: a.originalName || '',
+            profileUrl: a.profileUrl || '',
+            roleName: a.roleName || '演员'
+          })
+        }
+      })
+    } else if (typeof movie.value.actors === 'string' && movie.value.actors.trim() !== '') {
+      const names = movie.value.actors.split(/[,/，、]/)
+      names.forEach((name) => {
+        const trimmed = name.trim()
+        if (trimmed) {
+          list.push({
+            name: trimmed,
+            originalName: '',
+            profileUrl: '',
+            roleName: '演员'
+          })
+        }
+      })
+    }
+  }
+  return list
+})
+
+onMounted(async () => {
+  try {
+    const response = await getMovieDetail(props.id)
+    movie.value = response.data
+  } catch (error) {
+    console.warn('API error, falling back to mock movie details in CastView:', error)
+    const currentId = Number(props.id)
+    movie.value = mockMovies.find((m) => m.id === currentId) || mockMovies[0]
+  }
+})
+</script>
+
+<style scoped>
+.cast-view-container {
+  padding-top: 40px; /* 大幅度上调，贴近导航栏 */
+  padding-bottom: 48px;
+}
+
+.back-link {
+  transition: opacity 200ms ease, color 200ms ease;
+}
+
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 移动端默认 3 列 */
+  gap: 32px 12px;
+  padding: 4px;
+}
+
+@media (min-width: 576px) {
+  .cast-grid {
+    grid-template-columns: repeat(4, 1fr); /* 平板/小屏 4 列 */
+  }
+}
+
+@media (min-width: 768px) {
+  .cast-grid {
+    grid-template-columns: repeat(6, 1fr); /* 中屏 6 列 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .cast-grid {
+    grid-template-columns: repeat(8, 1fr); /* 铺满屏幕时一行只能显示 8 个 */
+    gap: 32px 12px; /* 减小横向间距，留给大头像更多空间 */
+  }
+}
+
+.cast-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+}
+
+.cast-card:hover {
+  transform: translateY(-2px);
+}
+
+.avatar-wrapper {
+  width: 140px; /* 头像尺寸进一步加大，几乎撑满整列 */
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 8px;
+  background-color: var(--surface-secondary);
+  border: 1px solid var(--border-soft);
+  box-shadow: var(--shadow-md);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+}
+
+/* 适配中等以下屏幕，头像自适应缩小 */
+@media (max-width: 1280px) {
+  .avatar-wrapper {
+    width: 120px;
+    height: 120px;
+  }
+}
+@media (max-width: 992px) {
+  .avatar-wrapper {
+    width: 100px;
+    height: 100px;
+  }
+}
+@media (max-width: 576px) {
+  .avatar-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.cast-card:hover .avatar-wrapper {
+  box-shadow: var(--shadow-lg);
+  transform: scale(1.04);
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  background: var(--poster-fallback);
+}
+
+.cast-name {
+  width: 100%;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+  margin-top: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cast-role {
+  width: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.2;
+  margin-top: 3px;
+  font-weight: 400;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>

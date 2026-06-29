@@ -13,7 +13,40 @@ export const mockMovies = [
     region: '美国',
     runtime: 169,
     viewCount: 12450,
-    favoriteCount: 890
+    favoriteCount: 890,
+    directors: [
+      {
+        name: '克里斯托弗·诺兰',
+        originalName: 'Christopher Nolan',
+        profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '马修·麦康纳',
+        originalName: 'Matthew McConaughey',
+        roleName: '库珀 (Cooper)',
+        profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '安妮·海瑟薇',
+        originalName: 'Anne Hathaway',
+        roleName: '布兰德 (Brand)',
+        profileUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '杰西卡·查斯坦',
+        originalName: 'Jessica Chastain',
+        roleName: '墨菲 (Murph)',
+        profileUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '迈克尔·凯恩',
+        originalName: 'Michael Caine',
+        roleName: '布兰德教授',
+        profileUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   },
   {
     id: 2,
@@ -29,7 +62,40 @@ export const mockMovies = [
     region: '美国',
     runtime: 148,
     viewCount: 15300,
-    favoriteCount: 1200
+    favoriteCount: 1200,
+    directors: [
+      {
+        name: '克里斯托弗·诺兰',
+        originalName: 'Christopher Nolan',
+        profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '莱昂纳多·迪卡普里奥',
+        originalName: 'Leonardo DiCaprio',
+        roleName: '柯布 (Cobb)',
+        profileUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '约瑟夫·高登-莱维特',
+        originalName: 'Joseph Gordon-Levitt',
+        roleName: '亚瑟 (Arthur)',
+        profileUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '艾利奥特·佩吉',
+        originalName: 'Elliot Page',
+        roleName: '阿里阿德涅 (Ariadne)',
+        profileUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '汤姆·哈迪',
+        originalName: 'Tom Hardy',
+        roleName: '伊姆斯 (Eames)',
+        profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   },
   {
     id: 3,
@@ -45,7 +111,34 @@ export const mockMovies = [
     region: '美国',
     runtime: 163,
     viewCount: 9800,
-    favoriteCount: 650
+    favoriteCount: 650,
+    directors: [
+      {
+        name: '丹尼斯·维伦纽瓦',
+        originalName: 'Denis Villeneuve',
+        profileUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '瑞恩·高斯林',
+        originalName: 'Ryan Gosling',
+        roleName: 'K',
+        profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '哈里森·福特',
+        originalName: 'Harrison Ford',
+        roleName: '瑞克·戴克 (Rick Deckard)',
+        profileUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '安娜·德·阿玛斯',
+        originalName: 'Ana de Armas',
+        roleName: '乔伊 (Joi)',
+        profileUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   },
   {
     id: 4,
@@ -61,7 +154,34 @@ export const mockMovies = [
     region: '美国',
     runtime: 155,
     viewCount: 11200,
-    favoriteCount: 780
+    favoriteCount: 780,
+    directors: [
+      {
+        name: '丹尼斯·维伦纽瓦',
+        originalName: 'Denis Villeneuve',
+        profileUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '提莫西·查拉梅',
+        originalName: 'Timothée Chalamet',
+        roleName: '保罗·厄崔迪 (Paul)',
+        profileUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '丽贝卡·弗格森',
+        originalName: 'Rebecca Ferguson',
+        roleName: '杰西卡夫人 (Lady Jessica)',
+        profileUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '奥斯卡·伊萨克',
+        originalName: 'Oscar Isaac',
+        roleName: '雷托·厄崔迪公爵',
+        profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   },
   {
     id: 5,
@@ -77,7 +197,34 @@ export const mockMovies = [
     region: '中国',
     runtime: 173,
     viewCount: 14000,
-    favoriteCount: 1100
+    favoriteCount: 1100,
+    directors: [
+      {
+        name: '郭帆',
+        originalName: 'Frant Gwo',
+        profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '吴京',
+        originalName: 'Wu Jing',
+        roleName: '刘培强',
+        profileUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '刘德华',
+        originalName: 'Andy Lau',
+        roleName: '图恒宇',
+        profileUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '李雪健',
+        originalName: 'Li Xuejian',
+        roleName: '周喆直',
+        profileUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   },
   {
     id: 6,
@@ -93,6 +240,27 @@ export const mockMovies = [
     region: '日本',
     runtime: 125,
     viewCount: 16800,
-    favoriteCount: 1500
+    favoriteCount: 1500,
+    directors: [
+      {
+        name: '宫崎骏',
+        originalName: 'Hayao Miyazaki',
+        profileUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80'
+      }
+    ],
+    actors: [
+      {
+        name: '柊瑠美',
+        originalName: 'Rumi Hiiragi',
+        roleName: '荻野千寻 (配音)',
+        profileUrl: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=120&auto=format&fit=crop&q=80'
+      },
+      {
+        name: '入野自由',
+        originalName: 'Miyu Irino',
+        roleName: '白龙 (配音)',
+        profileUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=120&auto=format&fit=crop&q=80'
+      }
+    ]
   }
 ]

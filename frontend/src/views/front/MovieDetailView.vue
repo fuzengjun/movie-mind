@@ -21,7 +21,7 @@
           <!-- 左侧：简介与元数据 -->
           <div class="space-y-4 max-w-2xl text-left">
             <p class="text-sm md:text-base leading-relaxed text-white/80 line-clamp-2 select-none">
-              {{ movie.overview || '探索无限视界，这里汇聚了精选影视、高分推荐以及您私人的影视管理体验。' }}
+              {{ movie.overview || '暂无影片简介。' }}
             </p>
             
             <div class="movie-meta-line">
@@ -55,21 +55,6 @@
           {{ movie.overview || '暂无详细简介。' }}
         </p>
 
-        <!-- 导演团队卡片列表 -->
-        <div class="border-t border-[var(--border-soft)] pt-4 mt-6 space-y-3">
-          <p class="text-[10px] font-bold tracking-wider text-[var(--text-muted)] uppercase">导演团队</p>
-          <div class="flex flex-wrap gap-3 pt-1">
-            <div v-for="person in movie.directors || []" :key="`director-${person.name}`" class="flex items-center gap-3 p-2 rounded-xl bg-[var(--surface-secondary)] border border-[var(--border-soft)]">
-              <img v-if="person.profileUrl" :src="person.profileUrl" :alt="person.name" class="h-10 w-10 rounded-lg object-cover" />
-              <div v-else class="h-10 w-10 rounded-lg bg-[var(--border-soft)]"></div>
-              <div>
-                <p class="text-xs font-semibold text-[var(--text-primary)]">{{ person.name }}</p>
-                <p class="text-[9px] text-[var(--text-muted)]">{{ person.originalName || '导演' }}</p>
-              </div>
-            </div>
-            <p v-if="!(movie.directors || []).length" class="text-xs text-[var(--text-muted)]">暂无导演信息。</p>
-          </div>
-        </div>
       </article>
 
       <!-- 右列：类型、评分与主演卡片 -->
@@ -171,6 +156,13 @@
       </div>
     </div>
 
+    <!-- 演职人员 -->
+    <CastRail 
+      v-if="castAndCrew && castAndCrew.length" 
+      :movieId="movie.id"
+      :cast="castAndCrew" 
+    />
+
     <!-- 关联推荐 -->
     <ContentRail 
       title="继续探索" 
@@ -186,6 +178,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovieDetail, getMovieList } from '@/api/movie'
 import ContentRail from '@/components/ContentRail.vue'
+import CastRail from '@/components/CastRail.vue'
 import { mockMovies } from '@/utils/mockData'
 
 const route = useRoute()
@@ -210,6 +203,82 @@ const actorsString = computed(() => {
 })
 
 const relatedMovies = computed(() => relatedSource.value.filter((item) => item.id !== movie.value?.id).slice(0, 8))
+
+// 合并导演与演员数据，构建统一的演职人员列表
+const castAndCrew = computed(() => {
+  const list = []
+  if (movie.value) {
+    // 1. 处理导演
+    if (Array.isArray(movie.value.directors)) {
+      movie.value.directors.forEach((d) => {
+        if (typeof d === 'string') {
+          list.push({
+            name: d,
+            originalName: '',
+            profileUrl: '',
+            roleName: '导演'
+          })
+        } else if (d && typeof d === 'object') {
+          list.push({
+            name: d.name || '',
+            originalName: d.originalName || '',
+            profileUrl: d.profileUrl || '',
+            roleName: d.roleName || '导演'
+          })
+        }
+      })
+    } else if (typeof movie.value.directors === 'string' && movie.value.directors.trim() !== '') {
+      const names = movie.value.directors.split(/[,/，、]/)
+      names.forEach((name) => {
+        const trimmed = name.trim()
+        if (trimmed) {
+          list.push({
+            name: trimmed,
+            originalName: '',
+            profileUrl: '',
+            roleName: '导演'
+          })
+        }
+      })
+    }
+
+    // 2. 处理演员
+    if (Array.isArray(movie.value.actors)) {
+      movie.value.actors.forEach((a) => {
+        if (typeof a === 'string') {
+          list.push({
+            name: a,
+            originalName: '',
+            profileUrl: '',
+            roleName: '演员'
+          })
+        } else if (a && typeof a === 'object') {
+          list.push({
+            name: a.name || '',
+            originalName: a.originalName || '',
+            profileUrl: a.profileUrl || '',
+            roleName: a.roleName || '演员'
+          })
+        }
+      })
+    } else if (typeof movie.value.actors === 'string' && movie.value.actors.trim() !== '') {
+      const names = movie.value.actors.split(/[,/，、]/)
+      names.forEach((name) => {
+        const trimmed = name.trim()
+        if (trimmed) {
+          list.push({
+            name: trimmed,
+            originalName: '',
+            profileUrl: '',
+            roleName: '演员'
+          })
+        }
+      })
+    }
+  }
+  return list
+})
+
 
 async function loadMovie() {
   try {

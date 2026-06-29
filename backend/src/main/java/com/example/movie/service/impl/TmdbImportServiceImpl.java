@@ -116,6 +116,19 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         String title = textOrNull(detail, "title");
         String originalTitle = textOrNull(detail, "original_title");
         String overview = textOrNull(detail, "overview");
+        if (!StringUtils.hasText(overview)) {
+            try {
+                JsonNode enDetail = fetchJson("/movie/" + tmdbId + "?language=en-US");
+                if (enDetail != null && !enDetail.path("overview").isMissingNode()) {
+                    String enOverview = enDetail.path("overview").asText();
+                    if (StringUtils.hasText(enOverview)) {
+                        overview = enOverview;
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Failed to fetch English overview fallback for movie: " + tmdbId + ", error: " + e.getMessage());
+            }
+        }
         String posterUrl = imageUrl(textOrNull(detail, "poster_path"));
         String backdropUrl = imageUrl(textOrNull(detail, "backdrop_path"));
         LocalDate releaseDate = parseDate(textOrNull(detail, "release_date"));

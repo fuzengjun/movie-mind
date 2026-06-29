@@ -25,7 +25,7 @@
         
         <!-- 电影简介 -->
         <p class="mt-4 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
-          {{ featuredMovie.overview || '探索无限视界，这里汇聚了精选影视、高分推荐以及您私人的影视管理体验。' }}
+          {{ featuredMovie.overview || '暂无影片简介。' }}
         </p>
         
         <!-- 核心元数据圆点连排文本 -->
