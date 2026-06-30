@@ -180,9 +180,9 @@
 
     <!-- 关联推荐 -->
     <ContentRail 
-      title="继续探索" 
+      :title="personalizedRelated ? '为你推荐' : '继续探索'"
       eyebrow="Up Next" 
-      description="从同一片库中继续挑选相似气质的内容。" 
+      :description="personalizedRelated ? '结合你的历史行为生成，并排除已经接触过的影片。' : '从同一片库中继续挑选相似气质的内容。'"
       :movies="relatedMovies" 
     />
   </section>
@@ -192,13 +192,17 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovieDetail, getMovieList } from '@/api/movie'
+import { getMyRecommend } from '@/api/recommend'
+import { useUserStore } from '@/stores/user'
 import ContentRail from '@/components/ContentRail.vue'
 import CastRail from '@/components/CastRail.vue'
 import { mockMovies } from '@/utils/mockData'
 
 const route = useRoute()
+const userStore = useUserStore()
 const movie = ref(null)
 const relatedSource = ref([])
+const personalizedRelated = ref(false)
 
 const heroStyle = computed(() => {
   const image = movie.value?.backdropUrl || movie.value?.posterUrl
@@ -381,6 +385,18 @@ async function loadMovie() {
     ])
     movie.value = detailResponse.data
     relatedSource.value = listResponse.data && listResponse.data.length > 0 ? listResponse.data : mockMovies
+    personalizedRelated.value = false
+    if (userStore.token) {
+      try {
+        const recommendResponse = await getMyRecommend({ limit: 12 })
+        if (recommendResponse.data?.length) {
+          relatedSource.value = recommendResponse.data
+          personalizedRelated.value = true
+        }
+      } catch (error) {
+        console.warn('Personalized related movies are temporarily unavailable:', error)
+      }
+    }
   } catch (error) {
     console.warn('API error, falling back to mock movie details:', error)
     const currentId = Number(route.params.id)

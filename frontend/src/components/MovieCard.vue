@@ -38,6 +38,7 @@
           </span>
         </div>
       </div>
+      <p v-if="movie.reason" class="recommend-reason">{{ movie.reason }}</p>
     </div>
   </RouterLink>
 </template>
@@ -50,3 +51,17 @@ defineProps({
   }
 })
 </script>
+
+<style scoped>
+.recommend-reason {
+  min-height: 2.5rem;
+  margin: .45rem 0 0;
+  color: var(--text-muted);
+  font-size: .7rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+</style>

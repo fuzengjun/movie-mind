@@ -48,6 +48,15 @@
 
     <!-- 影视展示轨 (Rails) -->
     <div class="space-y-12">
+      <ContentRail
+        v-if="userStore.token && personalizedMovies.length"
+        title="为你推荐"
+        eyebrow="Made For You"
+        :description="personalizedDescription"
+        :movies="personalizedMovies"
+        controls
+      />
+
       <ContentRail 
         title="热门影视" 
         eyebrow="Featured Row" 
@@ -75,10 +84,18 @@
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import { getMovieList } from '@/api/movie'
+import { getMyRecommend } from '@/api/recommend'
+import { useUserStore } from '@/stores/user'
 import ContentRail from '@/components/ContentRail.vue'
 import { mockMovies } from '@/utils/mockData'
 
+const userStore = useUserStore()
 const movies = ref([])
+const personalizedMovies = ref([])
+
+const personalizedDescription = computed(() => personalizedMovies.value[0]?.algorithm === 'USER_CF_COSINE'
+  ? '根据与你观影兴趣相近的用户生成，已自动排除你接触过的影片。'
+  : '你的行为数据还不多，暂时结合热门、高分与最新影片为你挑选。')
 
 const featuredMovie = computed(() => {
   if (!movies.value || movies.value.length === 0) return null
@@ -109,6 +126,14 @@ onMounted(async () => {
   } catch (error) {
     console.warn('API error, falling back to mock movies:', error)
     movies.value = mockMovies
+  }
+  if (userStore.token) {
+    try {
+      const response = await getMyRecommend({ limit: 12 })
+      personalizedMovies.value = response.data || []
+    } catch (error) {
+      console.warn('Personalized recommendations are temporarily unavailable:', error)
+    }
   }
 })
 </script>

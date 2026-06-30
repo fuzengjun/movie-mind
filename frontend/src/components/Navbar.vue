@@ -10,14 +10,19 @@
       <nav class="absolute left-1/2 hidden -translate-x-1/2 items-center gap-8 text-[13px] font-medium tracking-wide md:flex">
         <RouterLink class="nav-link transition duration-200" to="/">首页</RouterLink>
         <RouterLink class="nav-link transition duration-200" to="/movies">影视库</RouterLink>
+        <RouterLink v-if="userStore.token" class="nav-link transition duration-200" to="/recommendations">为你推荐</RouterLink>
         <RouterLink class="nav-link transition duration-200" to="/admin">后台</RouterLink>
       </nav>
       
       <!-- 右侧登录按钮 -->
-      <div class="hidden items-center md:flex">
-        <RouterLink class="rounded-full bg-[var(--text-primary)] px-5 py-2 text-xs font-semibold text-[var(--bg-primary)] no-underline transition duration-200 hover:opacity-90" to="/login">
-          登录
+      <div class="hidden items-center gap-3 md:flex">
+        <RouterLink v-if="userStore.token" class="rounded-full bg-[var(--text-primary)] px-5 py-2 text-xs font-semibold text-[var(--bg-primary)] no-underline transition duration-200 hover:opacity-90" to="/recommendations">
+          {{ userStore.profile?.nickname || '我的推荐' }}
         </RouterLink>
+        <template v-else>
+          <RouterLink class="nav-link text-xs no-underline" to="/register">注册</RouterLink>
+          <RouterLink class="rounded-full bg-[var(--text-primary)] px-5 py-2 text-xs font-semibold text-[var(--bg-primary)] no-underline transition duration-200 hover:opacity-90" to="/login">登录</RouterLink>
+        </template>
       </div>
       
       <button class="pill-button-premium md:hidden" @click="drawerVisible = true">导航</button>
@@ -28,8 +33,10 @@
       <div class="space-y-4 px-2 py-8">
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/" @click="drawerVisible = false">首页</RouterLink>
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/movies" @click="drawerVisible = false">影视库</RouterLink>
+        <RouterLink v-if="userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/recommendations" @click="drawerVisible = false">为你推荐</RouterLink>
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/admin" @click="drawerVisible = false">后台</RouterLink>
-        <RouterLink class="mt-4 block rounded-full bg-[var(--text-primary)] px-4 py-3 text-center text-sm font-semibold text-[var(--bg-primary)] no-underline" to="/login" @click="drawerVisible = false">
+        <RouterLink v-if="!userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/register" @click="drawerVisible = false">注册</RouterLink>
+        <RouterLink v-if="!userStore.token" class="mt-4 block rounded-full bg-[var(--text-primary)] px-4 py-3 text-center text-sm font-semibold text-[var(--bg-primary)] no-underline" to="/login" @click="drawerVisible = false">
           登录
         </RouterLink>
       </div>
@@ -39,6 +46,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const drawerVisible = ref(false)
 </script>
