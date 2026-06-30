@@ -84,8 +84,8 @@ async function runAdd() {
     } else {
       ElMessage.info('未找到可添加的新影片，本地已包含热门榜上的影片')
     }
-  } catch (error) {
-    ElMessage.error('添加新影片失败：' + (error.message || '未知错误'))
+  } catch {
+    // 请求层统一展示错误，避免同一次失败出现两条提示。
   } finally {
     addLoading.value = false
   }
@@ -101,8 +101,8 @@ async function runRefresh() {
     } else {
       ElMessage.warning('没有需要刷新的影片')
     }
-  } catch (error) {
-    ElMessage.error('刷新影片数据失败：' + (error.message || '未知错误'))
+  } catch {
+    // 请求层统一展示错误，避免同一次失败出现两条提示。
   } finally {
     refreshLoading.value = false
   }

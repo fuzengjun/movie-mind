@@ -23,4 +23,5 @@ app:
 tmdb:
   read-access-token: YOUR_TMDB_READ_ACCESS_TOKEN
   base-url: https://api.themoviedb.org/3
+  fallback-base-url: https://api.tmdb.org/3
   image-base-url: https://image.tmdb.org/t/p/w780

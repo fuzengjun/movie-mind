@@ -32,12 +32,14 @@ export const addNewMovies = (limit) => request({
   url: '/admin/tmdb/add',
   method: 'post',
   params: { limit },
-  timeout: 120000
+  timeout: 60000,
+  timeoutMessage: 'TMDB 添加任务已等待 60 秒，请检查网络或稍后重试'
 })
 export const refreshExistingMovies = (limit) => request({
   url: '/admin/tmdb/refresh',
   method: 'post',
   params: { limit },
-  timeout: 120000
+  timeout: 60000,
+  timeoutMessage: 'TMDB 刷新任务已等待 60 秒，请检查网络或稍后重试'
 })
 

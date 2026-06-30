@@ -8,6 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class TmdbProperties {
 
     private String baseUrl;
+    private String fallbackBaseUrl;
     private String imageBaseUrl;
     private String readAccessToken;
 }

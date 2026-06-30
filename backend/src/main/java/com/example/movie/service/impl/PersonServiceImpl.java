@@ -2,19 +2,15 @@ package com.example.movie.service.impl;
 
 import com.example.movie.config.TmdbProperties;
 import com.example.movie.service.PersonService;
+import com.example.movie.service.TmdbApiClient;
 import com.example.movie.vo.PersonDetailVO;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -29,7 +25,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 
 @Service
@@ -37,10 +32,9 @@ import static org.springframework.http.HttpStatus.BAD_REQUEST;
 public class PersonServiceImpl implements PersonService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
     private final TmdbProperties tmdbProperties;
+    private final TmdbApiClient tmdbApiClient;
     private static final long DETAIL_CACHE_TTL_MILLIS = 10 * 60 * 1000L;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Map<String, CachedPersonDetail> detailCache = new ConcurrentHashMap<>();
     private final Set<String> profileBackfillsInFlight = ConcurrentHashMap.newKeySet();
     private final ExecutorService profileExecutor = Executors.newFixedThreadPool(3, runnable -> {
@@ -302,23 +296,7 @@ public class PersonServiceImpl implements PersonService {
     }
 
     private JsonNode fetchPersonJson(Long tmdbPersonId, String language) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(tmdbProperties.getBaseUrl() + "/person/" + tmdbPersonId + "?language=" + language))
-                    .header("Authorization", "Bearer " + tmdbProperties.getReadAccessToken())
-                    .header("Accept", "application/json")
-                    .GET()
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败，状态码: " + response.statusCode());
-            }
-            return objectMapper.readTree(response.body());
-        } catch (ResponseStatusException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            throw new ResponseStatusException(BAD_GATEWAY, "TMDB 人物请求异常: " + exception.getMessage(), exception);
-        }
+        return tmdbApiClient.get("/person/" + tmdbPersonId + "?language=" + language);
     }
 
     private LocalDate parseDate(String value) {

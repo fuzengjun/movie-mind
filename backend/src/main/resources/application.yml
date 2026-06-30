@@ -24,6 +24,7 @@ app:
 
 tmdb:
   base-url: ${TMDB_BASE_URL:https://api.themoviedb.org/3}
+  fallback-base-url: ${TMDB_FALLBACK_BASE_URL:https://api.tmdb.org/3}
   image-base-url: ${TMDB_IMAGE_BASE_URL:https://image.tmdb.org/t/p/w780}
   read-access-token: ${TMDB_READ_ACCESS_TOKEN:}
 

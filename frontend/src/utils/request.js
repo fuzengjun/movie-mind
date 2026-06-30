@@ -76,7 +76,11 @@ request.interceptors.response.use(
     return payload
   },
   (error) => {
-    handleFailure(error.response?.status, error.response?.data?.message)
+    if (error.code === 'ECONNABORTED') {
+      ElMessage.error(error.config?.timeoutMessage || '请求超时，请稍后重试')
+    } else {
+      handleFailure(error.response?.status, error.response?.data?.message)
+    }
     return Promise.reject(error)
   }
 )

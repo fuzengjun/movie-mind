@@ -4,8 +4,8 @@ import com.example.movie.config.TmdbProperties;
 import com.example.movie.dto.admin.TmdbImportResultDTO;
 import com.example.movie.service.AdminStatisticsService;
 import com.example.movie.service.TmdbImportService;
+import com.example.movie.service.TmdbApiClient;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -15,10 +15,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -29,7 +25,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 
@@ -38,10 +33,9 @@ import static org.springframework.http.HttpStatus.PRECONDITION_FAILED;
 public class TmdbImportServiceImpl implements TmdbImportService {
 
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
     private final TmdbProperties tmdbProperties;
+    private final TmdbApiClient tmdbApiClient;
     private final AdminStatisticsService adminStatisticsService;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
     private final ExecutorService tmdbFetchExecutor = Executors.newFixedThreadPool(5, runnable -> {
         Thread thread = new Thread(runnable, "tmdb-import-fetch");
         thread.setDaemon(true);
@@ -256,53 +250,9 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         return futures.stream().map(CompletableFuture::join).toList();
     }
     private JsonNode fetchJson(String pathAndQuery) {
-        for (int attempt = 1; attempt <= 3; attempt++) {
-            try {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(tmdbProperties.getBaseUrl() + pathAndQuery))
-                        .header("Authorization", "Bearer " + tmdbProperties.getReadAccessToken())
-                        .header("Accept", "application/json")
-                        .GET()
-                        .build();
-                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-                int status = response.statusCode();
-                if (status >= 200 && status < 300) return objectMapper.readTree(response.body());
-                boolean retryable = status == 429 || status >= 500;
-                if (!retryable || attempt == 3) {
-                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败，状态码: " + status);
-                }
-                Thread.sleep(retryDelayMillis(response, attempt));
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-                throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求被中断", exception);
-            } catch (ResponseStatusException exception) {
-                throw exception;
-            } catch (Exception exception) {
-                if (attempt == 3) {
-                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求异常: " + exception.getMessage(), exception);
-                }
-                try {
-                    Thread.sleep(400L * attempt);
-                } catch (InterruptedException interrupted) {
-                    Thread.currentThread().interrupt();
-                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求被中断", interrupted);
-                }
-            }
-        }
-        throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败");
+        return tmdbApiClient.get(pathAndQuery);
     }
 
-    private long retryDelayMillis(HttpResponse<String> response, int attempt) {
-        return response.headers().firstValue("Retry-After")
-                .map(value -> {
-                    try {
-                        return Math.min(5_000L, Long.parseLong(value) * 1_000L);
-                    } catch (NumberFormatException ignored) {
-                        return 400L * attempt;
-                    }
-                })
-                .orElse(400L * attempt);
-    }
     private void upsertMovie(JsonNode detail) {
         Long tmdbId = detail.path("id").asLong();
         String title = textOrNull(detail, "title");
