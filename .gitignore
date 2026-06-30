@@ -27,7 +27,7 @@ backend/.mvn/wrapper/maven-wrapper.jar
 .env.*
 !.env.example
 deploy/wsl-docker/
-backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local-secret.yml
 
 # Runtime / temp
 tmp/
@@ -41,6 +41,3 @@ pnpm-workspace.yaml
 
 # Agents
 AGENTS.md
-
-# API Key
-docs/API.md
