@@ -22,4 +22,22 @@ export const deletePerson = (type, id) => request({ url: `/admin/${type}/${id}`,
 export const pageAnnouncements = (params) => request({ url: '/admin/announcements', method: 'get', params })
 export const saveAnnouncement = (id, data) => request({ url: id ? `/admin/announcements/${id}` : '/admin/announcements', method: id ? 'put' : 'post', data })
 export const deleteAnnouncement = (id) => request({ url: `/admin/announcements/${id}`, method: 'delete' })
-export const importPopularMovies = (limit) => request({ url: '/admin/tmdb/import/popular', method: 'post', params: { limit } })
+export const importPopularMovies = (limit) => request({
+  url: '/admin/tmdb/import/popular',
+  method: 'post',
+  params: { limit },
+  timeout: 60000
+})
+export const addNewMovies = (limit) => request({
+  url: '/admin/tmdb/add',
+  method: 'post',
+  params: { limit },
+  timeout: 120000
+})
+export const refreshExistingMovies = (limit) => request({
+  url: '/admin/tmdb/refresh',
+  method: 'post',
+  params: { limit },
+  timeout: 120000
+})
+

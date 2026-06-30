@@ -13,4 +13,6 @@ public interface AdminStatisticsService {
     List<AdminMovieListItemDTO> listAdminMovies();
 
     List<AdminUserListItemDTO> listAdminUsers();
+
+    void clearDashboardCache();
 }

@@ -5,4 +5,8 @@ import com.example.movie.dto.admin.TmdbImportResultDTO;
 public interface TmdbImportService {
 
     TmdbImportResultDTO importPopularMovies(Integer limit);
+
+    TmdbImportResultDTO addNewMovies(Integer limit);
+
+    TmdbImportResultDTO refreshExistingMovies(Integer limit);
 }

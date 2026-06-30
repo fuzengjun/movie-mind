@@ -20,4 +20,14 @@ public class AdminTmdbController {
     public Result<TmdbImportResultDTO> importPopular(@RequestParam(required = false) Integer limit) {
         return Result.success(tmdbImportService.importPopularMovies(limit));
     }
+
+    @PostMapping("/add")
+    public Result<TmdbImportResultDTO> addNewMovies(@RequestParam(required = false) Integer limit) {
+        return Result.success(tmdbImportService.addNewMovies(limit));
+    }
+
+    @PostMapping("/refresh")
+    public Result<TmdbImportResultDTO> refreshExisting(@RequestParam(required = false) Integer limit) {
+        return Result.success(tmdbImportService.refreshExistingMovies(limit));
+    }
 }

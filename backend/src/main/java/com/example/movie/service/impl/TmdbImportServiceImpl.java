@@ -2,9 +2,11 @@ package com.example.movie.service.impl;
 
 import com.example.movie.config.TmdbProperties;
 import com.example.movie.dto.admin.TmdbImportResultDTO;
+import com.example.movie.service.AdminStatisticsService;
 import com.example.movie.service.TmdbImportService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.springframework.http.HttpStatus.BAD_GATEWAY;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
@@ -35,7 +40,13 @@ public class TmdbImportServiceImpl implements TmdbImportService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final TmdbProperties tmdbProperties;
+    private final AdminStatisticsService adminStatisticsService;
     private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final ExecutorService tmdbFetchExecutor = Executors.newFixedThreadPool(5, runnable -> {
+        Thread thread = new Thread(runnable, "tmdb-import-fetch");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Override
     public TmdbImportResultDTO importPopularMovies(Integer limit) {
@@ -43,31 +54,170 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         ensureConfigured();
 
         List<Long> movieIds = fetchPopularMovieIds(target);
+        List<FetchedMovie> fetchedMovies = fetchMovieDetails(movieIds);
+        List<String> errors = new ArrayList<>();
         int imported = 0;
         int skipped = 0;
-        for (Long movieId : movieIds) {
-            JsonNode detail = fetchJson("/movie/" + movieId + "?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
-            if (detail == null || detail.path("id").isMissingNode()) {
+        for (FetchedMovie fetched : fetchedMovies) {
+            if (fetched.detail == null || fetched.detail.path("id").isMissingNode()) {
                 skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：" + fetched.error);
                 continue;
             }
-            upsertMovie(detail);
-            imported++;
+            try {
+                upsertMovie(fetched.detail);
+                imported++;
+            } catch (Exception exception) {
+                skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：写入失败 - " + rootMessage(exception));
+            }
         }
 
         TmdbImportResultDTO result = new TmdbImportResultDTO();
+        result.setMode("import");
         result.setRequested(target);
         result.setImported(imported);
+        result.setUpdated(0);
         result.setSkipped(skipped);
         result.setSource("TMDB popular movies");
+        result.setErrors(errors);
+        
+        if (imported > 0) {
+            adminStatisticsService.clearDashboardCache();
+        }
         return result;
     }
 
+    @Override
+    public TmdbImportResultDTO addNewMovies(Integer limit) {
+        int target = normalizeLimit(limit);
+        ensureConfigured();
+
+        // 查询本地已有的所有 tmdb_id
+        Set<Long> existingTmdbIds = new LinkedHashSet<>(
+                jdbcTemplate.queryForList("SELECT tmdb_id FROM movie WHERE tmdb_id IS NOT NULL AND deleted = 0", Long.class)
+        );
+
+        // 从热门榜翻页，跳过已有的，凑够 target 个新影片
+        List<Long> newMovieIds = new ArrayList<>();
+        int maxPage = 50; // TMDB 热门榜最多 500 页，但我们限制到 50 页 = 1000 部
+        for (int page = 1; page <= maxPage && newMovieIds.size() < target; page++) {
+            JsonNode payload = fetchJson("/movie/popular?language=zh-CN&page=" + page);
+            JsonNode results = payload.path("results");
+            if (!results.isArray() || results.isEmpty()) {
+                break;
+            }
+            for (JsonNode item : results) {
+                long tmdbId = item.path("id").asLong();
+                if (tmdbId > 0 && !existingTmdbIds.contains(tmdbId)) {
+                    newMovieIds.add(tmdbId);
+                    existingTmdbIds.add(tmdbId); // 避免同页重复
+                    if (newMovieIds.size() >= target) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        List<FetchedMovie> fetchedMovies = fetchMovieDetails(newMovieIds);
+        List<String> errors = new ArrayList<>();
+        int imported = 0;
+        int skipped = 0;
+        for (FetchedMovie fetched : fetchedMovies) {
+            if (fetched.detail == null || fetched.detail.path("id").isMissingNode()) {
+                skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：" + fetched.error);
+                continue;
+            }
+            try {
+                upsertMovie(fetched.detail);
+                imported++;
+            } catch (Exception exception) {
+                skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：写入失败 - " + rootMessage(exception));
+            }
+        }
+
+        TmdbImportResultDTO result = new TmdbImportResultDTO();
+        result.setMode("add");
+        result.setRequested(target);
+        result.setImported(imported);
+        result.setUpdated(0);
+        result.setSkipped(skipped);
+        result.setSource("TMDB popular movies (仅新增)");
+        if (newMovieIds.isEmpty()) {
+            addError(errors, "热门榜前 " + (maxPage * 20) + " 部影片均已在本地，无可添加的新影片");
+        }
+        result.setErrors(errors);
+
+        if (imported > 0) {
+            adminStatisticsService.clearDashboardCache();
+        }
+        return result;
+    }
+
+    @Override
+    public TmdbImportResultDTO refreshExistingMovies(Integer limit) {
+        int target = normalizeLimit(limit);
+        ensureConfigured();
+
+        // 查询本地最久未更新的 N 部有 tmdb_id 的影片
+        List<Long> tmdbIds = jdbcTemplate.queryForList(
+                "SELECT tmdb_id FROM movie WHERE tmdb_id IS NOT NULL AND deleted = 0 ORDER BY update_time ASC LIMIT ?",
+                Long.class,
+                target
+        );
+
+        if (tmdbIds.isEmpty()) {
+            TmdbImportResultDTO result = new TmdbImportResultDTO();
+            result.setMode("refresh");
+            result.setRequested(target);
+            result.setImported(0);
+            result.setUpdated(0);
+            result.setSkipped(0);
+            result.setSource("本地影片刷新");
+            result.setErrors(List.of("本地没有含 TMDB ID 的影片可刷新"));
+            return result;
+        }
+
+        List<FetchedMovie> fetchedMovies = fetchMovieDetails(tmdbIds);
+        List<String> errors = new ArrayList<>();
+        int updated = 0;
+        int skipped = 0;
+        for (FetchedMovie fetched : fetchedMovies) {
+            if (fetched.detail == null || fetched.detail.path("id").isMissingNode()) {
+                skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：" + fetched.error);
+                continue;
+            }
+            try {
+                upsertMovie(fetched.detail);
+                updated++;
+            } catch (Exception exception) {
+                skipped++;
+                addError(errors, "TMDB " + fetched.tmdbId + "：刷新失败 - " + rootMessage(exception));
+            }
+        }
+
+        TmdbImportResultDTO result = new TmdbImportResultDTO();
+        result.setMode("refresh");
+        result.setRequested(target);
+        result.setImported(0);
+        result.setUpdated(updated);
+        result.setSkipped(skipped);
+        result.setSource("本地影片刷新");
+        result.setErrors(errors);
+
+        if (updated > 0) {
+            adminStatisticsService.clearDashboardCache();
+        }
+        return result;
+    }
     private int normalizeLimit(Integer limit) {
         if (limit == null) {
             return 50;
         }
-        return Math.max(1, Math.min(limit, 50));
+        return Math.max(1, Math.min(limit, 100));
     }
 
     private void ensureConfigured() {
@@ -91,26 +241,68 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         return new ArrayList<>(ids);
     }
 
+    private List<FetchedMovie> fetchMovieDetails(List<Long> movieIds) {
+        List<CompletableFuture<FetchedMovie>> futures = movieIds.stream()
+                .map(movieId -> CompletableFuture.supplyAsync(() -> {
+                    try {
+                        JsonNode detail = fetchJson("/movie/" + movieId
+                                + "?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
+                        return new FetchedMovie(movieId, detail, null);
+                    } catch (Exception exception) {
+                        return new FetchedMovie(movieId, null, rootMessage(exception));
+                    }
+                }, tmdbFetchExecutor))
+                .toList();
+        return futures.stream().map(CompletableFuture::join).toList();
+    }
     private JsonNode fetchJson(String pathAndQuery) {
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(tmdbProperties.getBaseUrl() + pathAndQuery))
-                    .header("Authorization", "Bearer " + tmdbProperties.getReadAccessToken())
-                    .header("Accept", "application/json")
-                    .GET()
-                    .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败，状态码: " + response.statusCode());
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(tmdbProperties.getBaseUrl() + pathAndQuery))
+                        .header("Authorization", "Bearer " + tmdbProperties.getReadAccessToken())
+                        .header("Accept", "application/json")
+                        .GET()
+                        .build();
+                HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                int status = response.statusCode();
+                if (status >= 200 && status < 300) return objectMapper.readTree(response.body());
+                boolean retryable = status == 429 || status >= 500;
+                if (!retryable || attempt == 3) {
+                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败，状态码: " + status);
+                }
+                Thread.sleep(retryDelayMillis(response, attempt));
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求被中断", exception);
+            } catch (ResponseStatusException exception) {
+                throw exception;
+            } catch (Exception exception) {
+                if (attempt == 3) {
+                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求异常: " + exception.getMessage(), exception);
+                }
+                try {
+                    Thread.sleep(400L * attempt);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求被中断", interrupted);
+                }
             }
-            return objectMapper.readTree(response.body());
-        } catch (ResponseStatusException exception) {
-            throw exception;
-        } catch (Exception exception) {
-            throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求异常: " + exception.getMessage(), exception);
         }
+        throw new ResponseStatusException(BAD_GATEWAY, "TMDB 请求失败");
     }
 
+    private long retryDelayMillis(HttpResponse<String> response, int attempt) {
+        return response.headers().firstValue("Retry-After")
+                .map(value -> {
+                    try {
+                        return Math.min(5_000L, Long.parseLong(value) * 1_000L);
+                    } catch (NumberFormatException ignored) {
+                        return 400L * attempt;
+                    }
+                })
+                .orElse(400L * attempt);
+    }
     private void upsertMovie(JsonNode detail) {
         Long tmdbId = detail.path("id").asLong();
         String title = textOrNull(detail, "title");
@@ -459,4 +651,24 @@ public class TmdbImportServiceImpl implements TmdbImportService {
     private BigDecimal decimal(double value) {
         return BigDecimal.valueOf(value).setScale(1, RoundingMode.HALF_UP);
     }
+
+    private void addError(List<String> errors, String message) {
+        if (errors.size() < 5) errors.add(message);
+    }
+
+    private String rootMessage(Exception exception) {
+        if (exception instanceof ResponseStatusException response && StringUtils.hasText(response.getReason())) {
+            return response.getReason();
+        }
+        Throwable current = exception;
+        while (current.getCause() != null) current = current.getCause();
+        return StringUtils.hasText(current.getMessage()) ? current.getMessage() : current.getClass().getSimpleName();
+    }
+
+    @PreDestroy
+    void shutdownExecutor() {
+        tmdbFetchExecutor.shutdownNow();
+    }
+
+    private record FetchedMovie(Long tmdbId, JsonNode detail, String error) {}
 }

@@ -430,4 +430,20 @@ public class AdminStatisticsServiceImpl implements AdminStatisticsService {
     private LocalDateTime toLocalDateTime(Timestamp value) {
         return value == null ? null : value.toLocalDateTime();
     }
+
+    @Override
+    public void clearDashboardCache() {
+        StringRedisTemplate stringRedisTemplate = getStringRedisTemplate();
+        if (stringRedisTemplate != null) {
+            try {
+                java.util.Set<String> keys = stringRedisTemplate.keys(RedisKeys.STATISTICS_DASHBOARD + ":*");
+                if (keys != null && !keys.isEmpty()) {
+                    stringRedisTemplate.delete(keys);
+                    log.info("Cleared statistics dashboard cache keys: {}", keys);
+                }
+            } catch (Exception exception) {
+                log.warn("Failed to clear dashboard cache: {}", exception.getMessage());
+            }
+        }
+    }
 }

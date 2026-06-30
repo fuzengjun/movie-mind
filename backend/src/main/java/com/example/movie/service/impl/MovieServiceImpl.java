@@ -41,7 +41,7 @@ public class MovieServiceImpl implements MovieService {
                 WHERE m.deleted = 0 AND m.status = 1
                 GROUP BY m.id
                 ORDER BY m.view_count DESC, m.favorite_count DESC, m.id DESC
-                LIMIT 50
+                LIMIT 200
                 """;
         return jdbcTemplate.query(sql, (rs, rowNum) -> mapMovieVO(rs));
     }
