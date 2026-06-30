@@ -88,6 +88,11 @@ body,
   min-height: 100%;
 }
 
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 body {
   margin: 0;
   min-width: 320px;
@@ -689,4 +694,28 @@ html[data-theme='dark'] .el-select-dropdown__item:hover {
   border-color: var(--text-primary);
   color: var(--bg-primary);
   background: var(--text-primary);
+}
+/* 现代化全局消息气泡 */
+.el-message {
+  min-width: 0;
+  max-width: min(460px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  box-shadow: 0 12px 38px rgba(0, 0, 0, 0.14);
+  backdrop-filter: blur(22px) saturate(1.25);
+}
+.el-message .el-message__content {
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+.el-message .el-message__icon {
+  margin-right: 9px;
+  font-size: 17px;
+}
+.el-message.is-closable .el-message__content {
+  padding-right: 18px;
 }

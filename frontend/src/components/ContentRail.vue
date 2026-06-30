@@ -31,7 +31,7 @@ const props = defineProps({
   eyebrow: { type: String, default: '' },
   description: { type: String, default: '' },
   movies: { type: Array, default: () => [] },
-  controls: { type: Boolean, default: false }
+  controls: { type: Boolean, default: true }
 })
 
 const railRef = ref(null)
