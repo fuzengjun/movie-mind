@@ -19,6 +19,9 @@
         :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
         :to="personLink(person)"
         class="cast-card"
+        @mouseenter="schedulePrefetch(person)"
+        @mouseleave="cancelPrefetch"
+        @focus="prefetchNow(person)"
       >
         <div class="avatar-wrapper">
           <img 
@@ -46,7 +49,27 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount } from 'vue'
 import { RouterLink } from 'vue-router'
+import { prefetchPersonDetail } from '@/api/person'
+
+let prefetchTimer
+
+function prefetchNow(person) {
+  if (person?.id && person?.personType) prefetchPersonDetail(person.personType, person.id)
+}
+
+function schedulePrefetch(person) {
+  cancelPrefetch()
+  prefetchTimer = window.setTimeout(() => prefetchNow(person), 180)
+}
+
+function cancelPrefetch() {
+  if (prefetchTimer) window.clearTimeout(prefetchTimer)
+  prefetchTimer = undefined
+}
+
+onBeforeUnmount(cancelPrefetch)
 
 function personLink(person) {
   if (!person || !person.id || !person.personType) {

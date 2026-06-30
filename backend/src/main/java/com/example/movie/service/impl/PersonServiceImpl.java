@@ -19,6 +19,11 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -34,21 +39,31 @@ public class PersonServiceImpl implements PersonService {
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
     private final TmdbProperties tmdbProperties;
+    private static final long DETAIL_CACHE_TTL_MILLIS = 10 * 60 * 1000L;
     private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final Map<String, CachedPersonDetail> detailCache = new ConcurrentHashMap<>();
+    private final Set<String> profileBackfillsInFlight = ConcurrentHashMap.newKeySet();
+    private final ExecutorService profileExecutor = Executors.newFixedThreadPool(3, runnable -> {
+        Thread thread = new Thread(runnable, "person-profile-backfill");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     @Override
     public PersonDetailVO getPersonDetail(String type, Long id) {
         String normalizedType = normalizeType(type);
+        String cacheKey = normalizedType + ":" + id;
+        CachedPersonDetail cached = detailCache.get(cacheKey);
+        if (cached != null && cached.expiresAt > System.currentTimeMillis()) {
+            return cached.detail;
+        }
+        if (cached != null) detailCache.remove(cacheKey);
+
         PersonRecord primary = loadPerson(normalizedType, id);
         if (primary == null) {
             return null;
         }
 
-        maybeBackfillPersonProfile(normalizedType, primary);
-        primary = loadPerson(normalizedType, id);
-        if (primary == null) {
-            return null;
-        }
 
         Long actorId = "actor".equals(normalizedType) ? primary.id : findMirrorPersonId("actor", primary.tmdbId, primary.name);
         Long directorId = "director".equals(normalizedType) ? primary.id : findMirrorPersonId("director", primary.tmdbId, primary.name);
@@ -97,6 +112,8 @@ public class PersonServiceImpl implements PersonService {
         detail.setMovieCount(uniqueMovieIds.size());
         detail.setBackdropUrl(backdropUrl);
         detail.setSections(sections);
+        detailCache.put(cacheKey, new CachedPersonDetail(detail, System.currentTimeMillis() + DETAIL_CACHE_TTL_MILLIS));
+        schedulePersonProfileBackfill(normalizedType, primary, cacheKey);
         return detail;
     }
 
@@ -112,7 +129,7 @@ public class PersonServiceImpl implements PersonService {
 
     private PersonRecord loadPerson(String type, Long id) {
         String table = "actor".equals(type) ? "actor" : "director";
-        String sql = "SELECT id, tmdb_id, name, original_name, gender, profile_url, birthday, nationality, biography FROM " + table + " WHERE deleted = 0 AND id = ?";
+        String sql = "SELECT id, tmdb_id, name, original_name, gender, profile_url, birthday, nationality, biography, profile_sync_time FROM " + table + " WHERE deleted = 0 AND id = ?";
         List<PersonRecord> rows = jdbcTemplate.query(sql, (rs, rowNum) -> mapPersonRecord(rs), id);
         return rows.isEmpty() ? null : rows.get(0);
     }
@@ -129,6 +146,8 @@ public class PersonServiceImpl implements PersonService {
         record.birthday = birthday == null ? null : birthday.toLocalDate();
         record.nationality = rs.getString("nationality");
         record.biography = rs.getString("biography");
+        java.sql.Timestamp profileSyncTime = rs.getTimestamp("profile_sync_time");
+        record.profileSyncTime = profileSyncTime == null ? null : profileSyncTime.toLocalDateTime();
         return record;
     }
 
@@ -218,6 +237,27 @@ public class PersonServiceImpl implements PersonService {
         return List.of(categories.split(","));
     }
 
+    private void schedulePersonProfileBackfill(String type, PersonRecord record, String cacheKey) {
+        boolean needsProfile = !StringUtils.hasText(record.biography)
+                || record.birthday == null
+                || !StringUtils.hasText(record.nationality);
+        boolean recentlySynced = record.profileSyncTime != null
+                && record.profileSyncTime.isAfter(LocalDateTime.now().minusDays(1));
+        if (!needsProfile || recentlySynced || record.tmdbId == null
+                || !StringUtils.hasText(tmdbProperties.getReadAccessToken())) {
+            return;
+        }
+        if (!profileBackfillsInFlight.add(cacheKey)) return;
+        profileExecutor.submit(() -> {
+            try {
+                maybeBackfillPersonProfile(type, record);
+                detailCache.remove(cacheKey);
+            } finally {
+                profileBackfillsInFlight.remove(cacheKey);
+            }
+        });
+    }
+
     private void maybeBackfillPersonProfile(String type, PersonRecord record) {
         if (record.tmdbId == null || !StringUtils.hasText(tmdbProperties.getReadAccessToken())) {
             return;
@@ -228,7 +268,11 @@ public class PersonServiceImpl implements PersonService {
         if (!needsBiography && !needsBirthday && !needsLocation) {
             return;
         }
+        if (record.profileSyncTime != null && record.profileSyncTime.isAfter(LocalDateTime.now().minusDays(1))) {
+            return;
+        }
 
+        String table = "actor".equals(type) ? "actor" : "director";
         try {
             JsonNode detail = fetchPersonJson(record.tmdbId, "zh-CN");
             if (detail == null) {
@@ -243,8 +287,6 @@ public class PersonServiceImpl implements PersonService {
 
             LocalDate birthday = parseDate(textOrNull(detail, "birthday"));
             String placeOfBirth = textOrNull(detail, "place_of_birth");
-            String table = "actor".equals(type) ? "actor" : "director";
-
             jdbcTemplate.update(
                     "UPDATE " + table + " SET biography = ?, birthday = ?, nationality = ?, update_time = NOW() WHERE id = ?",
                     StringUtils.hasText(record.biography) ? record.biography : biography,
@@ -254,6 +296,8 @@ public class PersonServiceImpl implements PersonService {
             );
         } catch (Exception exception) {
             System.err.println("Person profile backfill skipped: " + exception.getMessage());
+        } finally {
+            jdbcTemplate.update("UPDATE " + table + " SET profile_sync_time = NOW() WHERE id = ?", record.id);
         }
     }
 
@@ -332,5 +376,8 @@ public class PersonServiceImpl implements PersonService {
         private LocalDate birthday;
         private String nationality;
         private String biography;
+        private LocalDateTime profileSyncTime;
     }
+
+    private record CachedPersonDetail(PersonDetailVO detail, long expiresAt) {}
 }
