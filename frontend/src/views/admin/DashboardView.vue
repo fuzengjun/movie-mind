@@ -1,5 +1,5 @@
 <template>
-  <section class="space-y-6">
+  <section class="min-w-0 space-y-6">
     <div class="hero-backdrop surface-card" :style="heroStyle" v-loading="loading">
       <div class="hero-content flex min-h-[420px] flex-col justify-end p-6 md:p-10">
         <div class="flex flex-wrap items-start justify-between gap-4">
@@ -64,7 +64,7 @@
       </section>
     </div>
 
-    <div class="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+    <div class="grid min-w-0 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
       <section class="surface-card p-5 md:p-6">
         <div class="flex items-center justify-between gap-3">
           <div>
@@ -93,7 +93,7 @@
         </div>
       </section>
 
-      <section class="surface-card p-5 md:p-6">
+      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
         <div class="flex items-center justify-between gap-3">
           <div>
             <p class="section-kicker text-xs">Highlights</p>
@@ -102,7 +102,7 @@
           <button class="pill-button" @click="fetchStatistics">刷新</button>
         </div>
         <div class="mt-5">
-          <ContentRail title="" :movies="stats?.hotMovies || []" />
+          <ContentRail title="" :movies="stats?.hotMovies || []" controls />
         </div>
       </section>
     </div>

@@ -5,12 +5,10 @@ import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
 import './assets/styles.css'
+import './assets/admin.css'
 import { setupThemeSync } from './utils/theme'
-
 setupThemeSync()
-
-const app = createApp(App)
-
+const app=createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(ElementPlus)
