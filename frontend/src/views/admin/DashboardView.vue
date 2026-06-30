@@ -41,23 +41,23 @@
       </section>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-      <section class="surface-card p-5 md:p-6">
+    <div class="grid gap-6 lg:grid-cols-2 2xl:grid-cols-4">
+      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
         <p class="section-kicker text-xs">Library</p>
         <h3 class="mt-2 text-xl font-semibold">分类分布</h3>
         <DashboardChart :option="categoryOption" height="280px" />
       </section>
-      <section class="surface-card p-5 md:p-6">
+      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
         <p class="section-kicker text-xs">Scores</p>
         <h3 class="mt-2 text-xl font-semibold">评分分布</h3>
         <DashboardChart :option="ratingOption" height="280px" />
       </section>
-      <section class="surface-card p-5 md:p-6">
+      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
         <p class="section-kicker text-xs">Release Years</p>
         <h3 class="mt-2 text-xl font-semibold">年份分布</h3>
         <DashboardChart :option="yearOption" height="280px" />
       </section>
-      <section class="surface-card p-5 md:p-6">
+      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
         <p class="section-kicker text-xs">Regions</p>
         <h3 class="mt-2 text-xl font-semibold">地区分布</h3>
         <DashboardChart :option="regionOption" height="280px" />
@@ -149,10 +149,10 @@ const activeRanking = computed(() => rankingTab.value === 'favorite' ? (stats.va
 function baseChart() {
   return {
     textStyle: { color: axisColor.value },
-    grid: { left: 24, right: 16, top: 26, bottom: 24, containLabel: true },
-    tooltip: { trigger: 'axis', backgroundColor: panelColor.value, borderWidth: 0, textStyle: { color: themeMode.value === 'dark' ? '#f5f1ea' : '#161615' } },
-    xAxis: { axisLine: { lineStyle: { color: panelColor.value } }, axisLabel: { color: axisColor.value } },
-    yAxis: { splitLine: { lineStyle: { color: panelColor.value } }, axisLabel: { color: axisColor.value } }
+    grid: { left: 20, right: 12, top: 26, bottom: 32, containLabel: true },
+    tooltip: { trigger: 'axis', confine: true, backgroundColor: panelColor.value, borderWidth: 0, textStyle: { color: themeMode.value === 'dark' ? '#f5f1ea' : '#161615' } },
+    xAxis: { axisLine: { lineStyle: { color: panelColor.value } }, axisLabel: { color: axisColor.value, hideOverlap: true, margin: 12 } },
+    yAxis: { splitLine: { lineStyle: { color: panelColor.value } }, axisLabel: { color: axisColor.value, hideOverlap: true } }
   }
 }
 
@@ -164,7 +164,8 @@ const userGrowthOption = computed(() => ({
 }))
 const activityOption = computed(() => ({
   ...baseChart(),
-  legend: { textStyle: { color: axisColor.value } },
+  grid: { ...baseChart().grid, top: 58 },
+  legend: { top: 4, left: 'center', itemWidth: 16, itemHeight: 10, itemGap: 20, textStyle: { color: axisColor.value, fontSize: 12 } },
   xAxis: { ...baseChart().xAxis, type: 'category', data: (stats.value?.dailyActivity || []).map((item) => item.date.slice(5)) },
   yAxis: { ...baseChart().yAxis, type: 'value' },
   series: [
@@ -184,9 +185,34 @@ const yearOption = computed(() => ({
 
 function pieOption(source) {
   return {
-    tooltip: { trigger: 'item', backgroundColor: panelColor.value, borderWidth: 0, textStyle: { color: themeMode.value === 'dark' ? '#f5f1ea' : '#161615' } },
-    legend: { bottom: 0, textStyle: { color: axisColor.value } },
-    series: [{ type: 'pie', radius: ['48%', '72%'], itemStyle: { borderRadius: 12, borderColor: 'transparent', borderWidth: 4 }, label: { color: axisColor.value }, data: source.map((item, index) => ({ ...item, itemStyle: { color: index % 2 === 0 ? lineColor.value : barColor.value } })) }]
+    tooltip: { trigger: 'item', confine: true, formatter: '{b}<br/>{c}（{d}%）', backgroundColor: panelColor.value, borderWidth: 0, textStyle: { color: themeMode.value === 'dark' ? '#f5f1ea' : '#161615' } },
+    legend: {
+      type: 'scroll',
+      left: 8,
+      right: 8,
+      bottom: 0,
+      itemWidth: 14,
+      itemHeight: 10,
+      itemGap: 12,
+      pageButtonGap: 8,
+      pageTextStyle: { color: axisColor.value },
+      textStyle: { color: axisColor.value, fontSize: 11 },
+      formatter: (name) => name.length > 12 ? `${name.slice(0, 12)}…` : name
+    },
+    series: [{
+      type: 'pie',
+      center: ['50%', '43%'],
+      radius: ['43%', '67%'],
+      avoidLabelOverlap: true,
+      itemStyle: { borderRadius: 10, borderColor: 'transparent', borderWidth: 4 },
+      label: { show: false },
+      labelLine: { show: false },
+      emphasis: {
+        scaleSize: 6,
+        label: { show: true, position: 'center', formatter: '{b}\n{d}%', color: axisColor.value, fontSize: 12, fontWeight: 600, lineHeight: 18 }
+      },
+      data: source.map((item, index) => ({ ...item, itemStyle: { color: index % 2 === 0 ? lineColor.value : barColor.value } }))
+    }]
   }
 }
 

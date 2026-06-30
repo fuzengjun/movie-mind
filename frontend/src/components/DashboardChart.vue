@@ -1,5 +1,5 @@
 <template>
-  <div ref="chartRef" :style="{ height }"></div>
+  <div ref="chartRef" class="dashboard-chart" :style="{ height }"></div>
 </template>
 
 <script setup>
@@ -19,6 +19,7 @@ const props = defineProps({
 
 const chartRef = ref(null)
 let chartInstance
+let resizeObserver
 
 function renderChart() {
   if (!chartRef.value) {
@@ -38,12 +39,23 @@ onMounted(async () => {
   await nextTick()
   renderChart()
   window.addEventListener('resize', resizeChart)
+  resizeObserver = new ResizeObserver(resizeChart)
+  resizeObserver.observe(chartRef.value)
 })
 
 watch(() => props.option, () => renderChart(), { deep: true })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', resizeChart)
+  resizeObserver?.disconnect()
   chartInstance?.dispose()
 })
 </script>
+
+<style scoped>
+.dashboard-chart {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+</style>
