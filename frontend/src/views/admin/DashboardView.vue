@@ -207,3 +207,29 @@ function changeRange(nextRange) {
 
 onMounted(() => fetchStatistics())
 </script>
+
+<style scoped>
+.hero-content {
+  mix-blend-mode: normal !important;
+}
+
+.hero-content .pill-button {
+  background: rgba(255, 255, 255, 0.14) !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.hero-content .pill-button:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+  color: #ffffff !important;
+}
+
+.hero-content .pill-button.is-active {
+  background: #ffffff !important;
+  color: #1d1d1f !important;
+  border-color: #ffffff !important;
+  font-weight: 600 !important;
+}
+</style>
