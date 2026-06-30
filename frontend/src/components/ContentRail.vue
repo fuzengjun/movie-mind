@@ -37,12 +37,13 @@ const props = defineProps({
 const railRef = ref(null)
 const canScrollLeft = ref(false)
 const canScrollRight = ref(false)
+const START_EPSILON = 12
 let resizeObserver
 
 function updateControls() {
   const rail = railRef.value
   if (!rail || !props.controls) return
-  canScrollLeft.value = rail.scrollLeft > 2
+  canScrollLeft.value = rail.scrollLeft > START_EPSILON
   canScrollRight.value = rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2
 }
 
@@ -52,15 +53,20 @@ function scrollRail(direction) {
   rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth' })
 }
 
-async function refreshControls() {
+async function resetRailPosition() {
+  canScrollLeft.value = false
   await nextTick()
+  const rail = railRef.value
+  if (!rail) return
+  rail.scrollTo({ left: 0, behavior: 'auto' })
   requestAnimationFrame(() => requestAnimationFrame(updateControls))
 }
 
-watch(() => props.movies.length, refreshControls)
+const movieSignature = () => props.movies.map((movie) => movie.id || movie.title).join('|')
+watch(movieSignature, resetRailPosition)
 
 onMounted(() => {
-  refreshControls()
+  resetRailPosition()
   if (window.ResizeObserver) {
     resizeObserver = new ResizeObserver(updateControls)
     resizeObserver.observe(railRef.value)
@@ -101,10 +107,19 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
   backdrop-filter: blur(18px);
   cursor: pointer;
-  transform: translateY(-50%);
-  transition: transform 160ms ease, background 160ms ease;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-50%) scale(.94);
+  transition: opacity 160ms ease, transform 160ms ease, background 160ms ease;
 }
-.rail-control:hover { background: var(--surface-primary); transform: translateY(-50%) scale(1.06); }
+.rail-shell:hover .rail-control {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+.rail-shell:hover .rail-control:hover { background: var(--surface-primary); transform: translateY(-50%) scale(1.06); }
 .rail-control:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
 .rail-control span { font-size: 38px; font-weight: 300; line-height: 1; transform: translateY(-2px); }
 .rail-control-left { left: 8px; }
