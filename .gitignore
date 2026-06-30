@@ -38,6 +38,7 @@ temp/
 node_modules/
 pnpm-lock.yaml
 pnpm-workspace.yaml
+package-lock.json
 
 # Agents
 AGENTS.md
