@@ -621,7 +621,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             return null;
         }
         String name = countries.get(0).path("name").asText(null);
-        return StringUtils.hasText(name) ? name : null;
+        return StringUtils.hasText(name) ? com.example.movie.utils.RegionNormalizer.normalize(name) : null;
     }
 
     private String imageUrl(String path) {
