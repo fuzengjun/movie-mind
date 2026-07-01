@@ -1,0 +1,11 @@
+import request from '@/utils/request'
+export const getInteraction=(id)=>request({url:`/movies/${id}/interaction`})
+export const recordView=(id)=>request({url:`/movies/${id}/view`,method:'post'})
+export const setFavorite=(id,on)=>request({url:`/favorites/${id}`,method:on?'post':'delete'})
+export const setWatchlist=(id,on)=>request({url:`/watchlist/${id}`,method:on?'post':'delete'})
+export const setWatched=(id,on)=>request({url:`/watch-history/${id}`,method:on?'post':'delete'})
+export const setRating=(movieId,score)=>request({url:'/ratings',method:'post',data:{movieId,score}})
+export const getComments=(id,params)=>request({url:`/movies/${id}/comments`,params})
+export const addComment=(movieId,content)=>request({url:'/comments',method:'post',data:{movieId,content}})
+export const deleteOwnComment=(id)=>request({url:`/comments/${id}`,method:'delete'})
+export const getMyRecords=(type,params)=>request({url:`/user/records/${type}`,params})

@@ -21,3 +21,5 @@ export function getHotMovies() {
     method: 'get'
   })
 }
+
+export function getRankings(params) { return request({ url: '/movies/rankings', method: 'get', params }) }

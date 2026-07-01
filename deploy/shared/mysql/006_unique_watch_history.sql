@@ -1,0 +1,2 @@
+DELETE w1 FROM watch_history w1 JOIN watch_history w2 ON w1.user_id=w2.user_id AND w1.movie_id=w2.movie_id AND w1.id<w2.id;
+ALTER TABLE watch_history ADD UNIQUE KEY uk_watch_history_user_movie (user_id,movie_id);

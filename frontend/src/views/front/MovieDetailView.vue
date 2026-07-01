@@ -54,6 +54,8 @@
       </div>
     </div>
 
+    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" />
+
     <!-- 中部：关于 (About) 双列磨砂玻璃面板 -->
     <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
       <!-- 左列：剧情简介 与 导演团队 -->
@@ -196,6 +198,7 @@ import { getMyRecommend } from '@/api/recommend'
 import { useUserStore } from '@/stores/user'
 import ContentRail from '@/components/ContentRail.vue'
 import CastRail from '@/components/CastRail.vue'
+import MovieActions from '@/components/MovieActions.vue'
 import { mockMovies } from '@/utils/mockData'
 
 const route = useRoute()

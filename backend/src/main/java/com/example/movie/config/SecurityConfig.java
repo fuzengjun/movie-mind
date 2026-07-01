@@ -4,6 +4,7 @@ import com.example.movie.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -28,6 +29,8 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, exception) -> writeError(response, 401, "登录状态已失效，请重新登录"))
                         .accessDeniedHandler((request, response, exception) -> writeError(response, 403, "当前账号没有访问权限")))
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.GET, "/api/movies/*/interaction").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/movies/*/view").authenticated()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/movies/**",

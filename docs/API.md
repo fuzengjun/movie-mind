@@ -53,3 +53,12 @@ tmdb:
 - 浏览详情：1 分。
 
 用户有效行为少于 3 条、没有足够的共同评分影片或没有候选影片时，接口自动使用热门度、评分和上映时间混合的冷启动策略。响应中的 `recommendScore`、`reason` 和 `algorithm` 分别表示推荐分数、推荐原因和算法类型。结果会保存到 `recommend_result`；开启 Redis 时使用 `recommend:user:{userId}:{limit}` 缓存 30 分钟。
+## 用户观影管理
+
+- GET /api/movies/{id}/interaction：当前用户收藏、评分、想看和看过状态。
+- POST|DELETE /api/favorites/{id}：收藏或取消收藏。
+- POST /api/ratings：新增或更新 1–10 分评分。
+- POST|DELETE /api/watchlist/{id}：标记或取消“想看”。
+- POST|DELETE /api/watch-history/{id}：标记或取消“看过”；标记后自动移出想看。
+- GET /api/user/records/{favorites|ratings|watchlist|watched|views}：个人记录。
+- GET /api/movies/rankings：排行榜。

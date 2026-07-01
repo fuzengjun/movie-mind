@@ -14,3 +14,7 @@ export function updateProfile(data) {
     data
   })
 }
+
+export function changePassword(data) {
+  return request({ url: '/user/password', method: 'put', data })
+}
