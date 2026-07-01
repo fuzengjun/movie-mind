@@ -1,49 +1,8 @@
-<template>
-  <section class="space-y-8 pt-20">
-    <div class="surface-card flex flex-col gap-5 p-6 md:flex-row md:items-end md:justify-between">
-      <div>
-        <p class="section-kicker text-xs">Movie Library</p>
-        <h1 class="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">像流媒体首页一样浏览片库</h1>
-        <p class="mt-3 max-w-2xl text-[var(--text-secondary)]">按分类与地区切换视角，让片库不再像静态表格，而是像正在运营的内容货架。</p>
-      </div>
-      <div class="flex flex-wrap gap-3">
-        <button class="pill-button" :class="{ 'is-active': activeCategory === '全部' }" @click="activeCategory = '全部'">全部分类</button>
-        <button v-for="category in categories" :key="category" class="pill-button" :class="{ 'is-active': activeCategory === category }" @click="activeCategory = category">
-          {{ category }}
-        </button>
-      </div>
-    </div>
-
-    <div class="flex flex-wrap gap-3">
-      <button class="pill-button" :class="{ 'is-active': activeRegion === '全部' }" @click="activeRegion = '全部'">全部地区</button>
-      <button v-for="region in regions" :key="region" class="pill-button" :class="{ 'is-active': activeRegion === region }" @click="activeRegion = region">
-        {{ region }}
-      </button>
-    </div>
-
-    <MovieList :movies="filteredMovies" />
-  </section>
-</template>
-
+<template><section class="space-y-6 pt-20"><div class="surface-card p-6"><p class="section-kicker">Movie Library</p><h1 class="mt-3 text-3xl font-semibold md:text-5xl">影视库</h1><div class="filters"><el-input v-model="query.keyword" clearable placeholder="搜索影片标题" @keyup.enter="search"/><el-select v-model="query.category" clearable placeholder="全部类型"><el-option v-for="v in options.categories" :key="v" :label="v" :value="v"/></el-select><el-select v-model="query.region" clearable placeholder="全部地区"><el-option v-for="v in options.regions" :key="v" :label="v" :value="v"/></el-select><el-select v-model="query.year" clearable placeholder="全部年份"><el-option v-for="v in options.years" :key="v" :label="v" :value="v"/></el-select><el-select v-model="query.sort" placeholder="排序"><el-option label="热门优先" value="hot"/><el-option label="评分从高到低" value="rating-desc"/><el-option label="评分从低到高" value="rating-asc"/><el-option label="收藏最多" value="favorite-desc"/><el-option label="上映时间从新到旧" value="release-desc"/><el-option label="上映时间从旧到新" value="release-asc"/></el-select><button class="pill-button is-active" @click="search">查询</button><button class="pill-button" @click="reset">重置</button></div></div><div v-loading="loading"><MovieList :movies="movies"/><el-empty v-if="!loading&&!movies.length" description="没有符合条件的影片"/></div><div class="pager"><el-pagination v-model:current-page="query.pageNum" :page-size="query.pageSize" :total="total" layout="prev, pager, next, total" @current-change="load"/></div></section></template>
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { getMovieList } from '@/api/movie'
-import MovieList from '@/components/MovieList.vue'
-
-const movies = ref([])
-const activeCategory = ref('全部')
-const activeRegion = ref('全部')
-
-const categories = computed(() => [...new Set(movies.value.flatMap((movie) => movie.categories || []))].slice(0, 8))
-const regions = computed(() => [...new Set(movies.value.map((movie) => movie.region).filter(Boolean))].slice(0, 8))
-const filteredMovies = computed(() => movies.value.filter((movie) => {
-  const categoryMatched = activeCategory.value === '全部' || (movie.categories || []).includes(activeCategory.value)
-  const regionMatched = activeRegion.value === '全部' || movie.region === activeRegion.value
-  return categoryMatched && regionMatched
-}))
-
-onMounted(async () => {
-  const response = await getMovieList()
-  movies.value = response.data || []
-})
-</script>
+import{onMounted,reactive,ref}from'vue';import{getMoviePage,getMovieFilters}from'@/api/movie';import MovieList from'@/components/MovieList.vue'
+const movies=ref([]),total=ref(0),loading=ref(false),options=reactive({categories:[],regions:[],years:[]}),query=reactive({keyword:'',category:'',region:'',year:null,sort:'hot',pageNum:1,pageSize:20})
+async function load(){loading.value=true;try{const r=await getMoviePage(query);movies.value=r.data?.records||[];total.value=Number(r.data?.total||0)}finally{loading.value=false}}
+function search(){query.pageNum=1;load()}function reset(){Object.assign(query,{keyword:'',category:'',region:'',year:null,sort:'hot',pageNum:1});load()}
+onMounted(async()=>{const r=await getMovieFilters();Object.assign(options,r.data||{});await load()})
+</script><style scoped>.filters{display:grid;grid-template-columns:2fr repeat(4,minmax(140px,1fr)) auto auto;gap:12px;margin-top:24px}.pager{display:flex;justify-content:center}@media(max-width:1000px){.filters{grid-template-columns:1fr 1fr}}@media(max-width:600px){.filters{grid-template-columns:1fr}}</style>

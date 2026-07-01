@@ -1,0 +1,9 @@
+package com.example.movie.service;
+import com.fasterxml.jackson.core.type.TypeReference;import com.fasterxml.jackson.databind.ObjectMapper;import com.example.movie.utils.RedisKeys;import lombok.RequiredArgsConstructor;import org.springframework.beans.factory.ObjectProvider;import org.springframework.beans.factory.annotation.Value;import org.springframework.data.redis.core.StringRedisTemplate;import org.springframework.stereotype.Service;import java.time.Duration;import java.util.*;
+@Service @RequiredArgsConstructor public class MovieCacheService{
+ private final ObjectProvider<StringRedisTemplate> provider;private final ObjectMapper json;@Value("${app.cache.redis.enabled:false}")private boolean enabled;
+ public <T>T read(String key,TypeReference<T>type){if(!enabled)return null;try{String v=provider.getIfAvailable().opsForValue().get(key);return v==null?null:json.readValue(v,type);}catch(Exception e){return null;}}
+ public void write(String key,Object value,Duration ttl){if(!enabled)return;try{provider.getIfAvailable().opsForValue().set(key,json.writeValueAsString(value),ttl);}catch(Exception ignored){}}
+ public void evictRecommendations(Long userId){if(!enabled)return;try{StringRedisTemplate r=provider.getIfAvailable();Set<String>keys=r.keys("recommend:user:"+userId+":*");if(keys!=null&&!keys.isEmpty())r.delete(keys);}catch(Exception ignored){}}
+ public void evictMovieCaches(){if(!enabled)return;try{StringRedisTemplate r=provider.getIfAvailable();Set<String>keys=new HashSet<>();for(String p:List.of("movie:home*","movie:hot*","movie:top-rated*","movie:latest*","movie:ranking:*","movie:detail:*")){Set<String>found=r.keys(p);if(found!=null)keys.addAll(found);}if(!keys.isEmpty())r.delete(keys);}catch(Exception ignored){}}
+}

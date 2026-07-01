@@ -62,3 +62,13 @@ tmdb:
 - POST|DELETE /api/watch-history/{id}：标记或取消“看过”；标记后自动移出想看。
 - GET /api/user/records/{favorites|ratings|watchlist|watched|views}：个人记录。
 - GET /api/movies/rankings：排行榜。
+## 影片检索与 TMDB 单片导入
+
+- GET /api/movies/page：参数 keyword、category、region、year、sort、pageNum、pageSize。
+- GET /api/movies/filters：返回可用类型、地区与年份。
+- GET /api/admin/tmdb/search?query={name}&page=1：按名称搜索 TMDB，结果包含 imported 状态。
+- POST /api/admin/tmdb/import/{tmdbId}：导入指定影片；已导入影片拒绝重复导入。
+
+## Redis 影片缓存
+
+启用 app.cache.redis.enabled 后缓存首页片单、热门影片、影片详情、各类型排行榜和个性化推荐。影片导入、后台影片/分类变更以及收藏、评分、浏览行为会清理对应缓存；Redis 不可用时自动回退数据库查询。

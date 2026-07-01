@@ -5,6 +5,7 @@ import com.example.movie.dto.admin.TmdbImportResultDTO;
 import com.example.movie.service.AdminStatisticsService;
 import com.example.movie.service.TmdbImportService;
 import com.example.movie.service.TmdbApiClient;
+import com.example.movie.service.MovieCacheService;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,6 +41,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
     private final TmdbProperties tmdbProperties;
     private final TmdbApiClient tmdbApiClient;
     private final AdminStatisticsService adminStatisticsService;
+    private final MovieCacheService movieCacheService;
     private final ExecutorService tmdbFetchExecutor = Executors.newFixedThreadPool(5, runnable -> {
         Thread thread = new Thread(runnable, "tmdb-import-fetch");
         thread.setDaemon(true);
@@ -78,14 +84,21 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         
         if (imported > 0) {
             adminStatisticsService.clearDashboardCache();
+            movieCacheService.evictMovieCaches();
         }
         return result;
     }
 
     @Override
-    public TmdbImportResultDTO addNewMovies(Integer limit) {
+    public TmdbImportResultDTO addNewMovies(Integer limit, String source) {
         int target = normalizeLimit(limit);
         ensureConfigured();
+        String normalizedSource = source == null ? "popular" : source.trim().toLowerCase();
+        if (!Set.of("popular", "top-rated").contains(normalizedSource)) {
+            throw new IllegalArgumentException("导入来源仅支持 popular 或 top-rated");
+        }
+        String tmdbListPath = normalizedSource.equals("top-rated") ? "/movie/top_rated" : "/movie/popular";
+        String sourceLabel = normalizedSource.equals("top-rated") ? "TMDB 高分榜" : "TMDB 热门榜";
 
         // 查询本地已有的所有 tmdb_id
         Set<Long> existingTmdbIds = new LinkedHashSet<>(
@@ -96,7 +109,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         List<Long> newMovieIds = new ArrayList<>();
         int maxPage = 50; // TMDB 热门榜最多 500 页，但我们限制到 50 页 = 1000 部
         for (int page = 1; page <= maxPage && newMovieIds.size() < target; page++) {
-            JsonNode payload = fetchJson("/movie/popular?language=zh-CN&page=" + page);
+            JsonNode payload = fetchJson(tmdbListPath + "?language=zh-CN&page=" + page);
             JsonNode results = payload.path("results");
             if (!results.isArray() || results.isEmpty()) {
                 break;
@@ -138,14 +151,15 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         result.setImported(imported);
         result.setUpdated(0);
         result.setSkipped(skipped);
-        result.setSource("TMDB popular movies (仅新增)");
+        result.setSource(sourceLabel + "（仅新增）");
         if (newMovieIds.isEmpty()) {
-            addError(errors, "热门榜前 " + (maxPage * 20) + " 部影片均已在本地，无可添加的新影片");
+            addError(errors, sourceLabel + "前 " + (maxPage * 20) + " 部影片均已在本地，无可添加的新影片");
         }
         result.setErrors(errors);
 
         if (imported > 0) {
             adminStatisticsService.clearDashboardCache();
+            movieCacheService.evictMovieCaches();
         }
         return result;
     }
@@ -204,8 +218,39 @@ public class TmdbImportServiceImpl implements TmdbImportService {
 
         if (updated > 0) {
             adminStatisticsService.clearDashboardCache();
+            movieCacheService.evictMovieCaches();
         }
         return result;
+    }
+    @Override
+    public List<Map<String,Object>> searchMovies(String query, Integer page) {
+        ensureConfigured();
+        if (!StringUtils.hasText(query)) throw new IllegalArgumentException("请输入影片名称");
+        int safePage = Math.max(1, page == null ? 1 : page);
+        JsonNode payload = fetchJson("/search/movie?language=zh-CN&include_adult=false&page=" + safePage
+                + "&query=" + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8));
+        Set<Long> existing = new LinkedHashSet<>(jdbcTemplate.queryForList(
+                "SELECT tmdb_id FROM movie WHERE tmdb_id IS NOT NULL AND deleted=0", Long.class));
+        List<Map<String,Object>> result = new ArrayList<>();
+        for (JsonNode item : payload.path("results")) {
+            long id=item.path("id").asLong();if(id<=0)continue;
+            Map<String,Object> row=new LinkedHashMap<>();row.put("tmdbId",id);row.put("title",item.path("title").asText(""));
+            row.put("originalTitle",item.path("original_title").asText(""));row.put("overview",item.path("overview").asText(""));
+            row.put("releaseDate",item.path("release_date").asText(""));row.put("rating",item.path("vote_average").asDouble(0));
+            row.put("posterUrl",imageUrl(item.path("poster_path").asText(null)));row.put("imported",existing.contains(id));result.add(row);
+        }
+        return result;
+    }
+
+    @Override
+    public TmdbImportResultDTO importMovie(Long tmdbId) {
+        ensureConfigured();
+        if (tmdbId == null || tmdbId <= 0) throw new IllegalArgumentException("TMDB ID 不正确");
+        if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM movie WHERE tmdb_id=? AND deleted=0", Long.class, tmdbId) > 0)
+            throw new IllegalArgumentException("该 TMDB 影片已导入");
+        JsonNode detail=fetchJson("/movie/"+tmdbId+"?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
+        upsertMovie(detail);adminStatisticsService.clearDashboardCache();movieCacheService.evictMovieCaches();
+        TmdbImportResultDTO r=new TmdbImportResultDTO();r.setMode("single");r.setRequested(1);r.setImported(1);r.setUpdated(0);r.setSkipped(0);r.setSource("TMDB movie "+tmdbId);r.setErrors(List.of());return r;
     }
     private int normalizeLimit(Integer limit) {
         if (limit == null) {

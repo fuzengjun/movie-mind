@@ -28,10 +28,10 @@ export const importPopularMovies = (limit) => request({
   params: { limit },
   timeout: 60000
 })
-export const addNewMovies = (limit) => request({
+export const addNewMovies = (limit, source = 'popular') => request({
   url: '/admin/tmdb/add',
   method: 'post',
-  params: { limit },
+  params: { limit, source },
   timeout: 60000,
   timeoutMessage: 'TMDB 添加任务已等待 60 秒，请检查网络或稍后重试'
 })
@@ -43,3 +43,6 @@ export const refreshExistingMovies = (limit) => request({
   timeoutMessage: 'TMDB 刷新任务已等待 60 秒，请检查网络或稍后重试'
 })
 
+
+export const searchTmdbMovies = (query, page = 1) => request({ url: '/admin/tmdb/search', method: 'get', params: { query, page } })
+export const importTmdbMovie = (tmdbId) => request({ url: '/admin/tmdb/import/' + tmdbId, method: 'post' })
