@@ -55,7 +55,7 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (targetVector.size() < MIN_INTERACTIONS) {
             recommendations = coldStart(touchedMovieIds, limit);
         } else {
-            recommendations = collaborativeFilter(userId, matrix, touchedMovieIds, limit);
+            recommendations = new ArrayList<>(collaborativeFilter(userId, matrix, touchedMovieIds, limit));
             if (recommendations.size() < limit) {
                 Set<Long> excluded = new HashSet<>(touchedMovieIds);
                 recommendations.forEach(item -> excluded.add(item.getId()));
