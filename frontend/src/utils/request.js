@@ -4,7 +4,20 @@ import { useUserStore } from '@/stores/user'
 
 const request = axios.create({
   baseURL: '/api',
-  timeout: 10000
+  timeout: 10000,
+  paramsSerializer: {
+    serialize(params) {
+      const searchParams = new URLSearchParams()
+      Object.entries(params).forEach(([key, value]) => {
+        if (value === undefined || value === null || value === '') return
+        const values = Array.isArray(value) ? value : [value]
+        values
+          .filter((item) => item !== undefined && item !== null && item !== '')
+          .forEach((item) => searchParams.append(key, String(item)))
+      })
+      return searchParams.toString()
+    }
+  }
 })
 
 let authDialogOpen = false

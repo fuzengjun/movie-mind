@@ -12,13 +12,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * AI 助手接口速率限制拦截器。
- * 基于用户名进行限流：每个用户每分钟最多 10 次请求。
+ * 基于用户名进行限流：每个用户每分钟最多 40 次请求。
  */
 @Slf4j
 @Component
 public class AiRateLimitInterceptor implements HandlerInterceptor {
 
-    private static final int MAX_REQUESTS_PER_MINUTE = 10;
+    private static final int MAX_REQUESTS_PER_MINUTE = 40;
     private static final long WINDOW_MS = 60_000L;
 
     private final Map<String, RateInfo> limiterMap = new ConcurrentHashMap<>();
