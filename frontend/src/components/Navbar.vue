@@ -17,6 +17,14 @@
       
       <!-- 右侧登录按钮 -->
       <div class="hidden items-center gap-3 md:flex">
+        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换亮色模式' : '切换暗色模式'">
+          <svg v-if="!isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
         <template v-if="userStore.token">
           <RouterLink class="rounded-full bg-[var(--text-primary)] px-5 py-2 text-xs font-semibold text-[var(--bg-primary)] no-underline transition duration-200 hover:opacity-90" to="/profile">
             {{ userStore.profile?.nickname || '个人中心' }}
@@ -37,9 +45,21 @@
       <div class="space-y-4 px-2 py-8">
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/" @click="drawerVisible = false">首页</RouterLink>
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/movies" @click="drawerVisible = false">影视库</RouterLink>
+        <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/rankings" @click="drawerVisible = false">排行榜</RouterLink>
         <RouterLink v-if="userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/recommendations" @click="drawerVisible = false">为你推荐</RouterLink>
         <RouterLink v-if="userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/profile" @click="drawerVisible = false">个人中心</RouterLink>
         <RouterLink v-if="isAdmin" class="block rounded-xl px-4 py-3 nav-link" to="/admin" @click="drawerVisible = false">后台</RouterLink>
+        <div class="mobile-theme-row">
+          <span class="text-sm text-[var(--text-secondary)]">{{ isDark ? '暗色模式' : '亮色模式' }}</span>
+          <button class="theme-toggle" @click="toggleTheme">
+            <svg v-if="!isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
         <button v-if="userStore.token" class="mobile-logout" type="button" @click="handleLogout">退出登录</button>
         <RouterLink v-if="!userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/register" @click="drawerVisible = false">注册</RouterLink>
         <RouterLink v-if="!userStore.token" class="mt-4 block rounded-full bg-[var(--text-primary)] px-4 py-3 text-center text-sm font-semibold text-[var(--bg-primary)] no-underline" to="/login" @click="drawerVisible = false">
@@ -55,10 +75,12 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
+import { useThemeMode, toggleTheme } from '@/utils/theme'
 
 const router = useRouter()
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.profile?.role === 'ADMIN')
+const isDark = computed(() => useThemeMode().value === 'dark')
 const drawerVisible = ref(false)
 
 async function handleLogout() {
@@ -87,5 +109,31 @@ async function handleLogout() {
   background: var(--surface-secondary);
   font-weight: 650;
   cursor: pointer;
+}
+.theme-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+.theme-toggle:hover {
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+}
+.mobile-theme-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-top: 12px;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-soft);
 }
 </style>
