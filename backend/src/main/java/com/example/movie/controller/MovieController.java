@@ -52,13 +52,16 @@ public class MovieController {
     @GetMapping("/page")
     public Result<PageResult<Map<String,Object>>> page(
             @org.springframework.web.bind.annotation.RequestParam(required=false) String keyword,
-            @org.springframework.web.bind.annotation.RequestParam(required=false) String category,
-            @org.springframework.web.bind.annotation.RequestParam(required=false) String region,
-            @org.springframework.web.bind.annotation.RequestParam(required=false) Integer year,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<String> categories,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<String> excludeCategories,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<String> regions,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<String> excludeRegions,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<Integer> years,
+            @org.springframework.web.bind.annotation.RequestParam(required=false) List<Integer> excludeYears,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue="hot") String sort,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue="1") long pageNum,
             @org.springframework.web.bind.annotation.RequestParam(defaultValue="20") long pageSize) {
-        return Result.success(catalogService.page(keyword, category, region, year, sort, pageNum, pageSize));
+        return Result.success(catalogService.page(keyword, categories, excludeCategories, regions, excludeRegions, years, excludeYears, sort, pageNum, pageSize));
     }
 
     @GetMapping("/filters")
