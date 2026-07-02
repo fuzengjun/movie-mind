@@ -37,8 +37,4 @@ public class AdminManagementController {
     @PostMapping("/{type:actors|directors}") public Result<Long> createPerson(@PathVariable String type,@RequestBody Map<String,Object> body){return Result.success(service.savePerson(type,null,body));}
     @PutMapping("/{type:actors|directors}/{id}") public Result<Long> updatePerson(@PathVariable String type,@PathVariable Long id,@RequestBody Map<String,Object> body){return Result.success(service.savePerson(type,id,body));}
     @DeleteMapping("/{type:actors|directors}/{id}") public Result<Void> deletePerson(@PathVariable String type,@PathVariable Long id){service.deletePerson(type,id);return Result.success(null);}
-    @GetMapping("/announcements") public Result<PageResult<Map<String,Object>>> announcements(@RequestParam(required=false)String keyword,@RequestParam(defaultValue="1")long pageNum,@RequestParam(defaultValue="10")long pageSize){return Result.success(service.listAnnouncements(keyword,pageNum,pageSize));}
-    @PostMapping("/announcements") public Result<Long> createAnnouncement(@RequestBody Map<String,Object> body){return Result.success(service.saveAnnouncement(null,body));}
-    @PutMapping("/announcements/{id}") public Result<Long> updateAnnouncement(@PathVariable Long id,@RequestBody Map<String,Object> body){return Result.success(service.saveAnnouncement(id,body));}
-    @DeleteMapping("/announcements/{id}") public Result<Void> deleteAnnouncement(@PathVariable Long id){service.deleteAnnouncement(id);return Result.success(null);}
 }

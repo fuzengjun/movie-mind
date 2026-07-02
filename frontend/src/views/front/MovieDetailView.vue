@@ -413,7 +413,6 @@ watch(
   () => route.params.id,
   () => {
     loadMovie()
-    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 )
 onMounted(() => loadMovie())

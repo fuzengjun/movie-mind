@@ -207,6 +207,7 @@ CREATE TABLE IF NOT EXISTS `view_history` (
   `movie_id` BIGINT NOT NULL COMMENT '影视ID',
   `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '浏览时间',
   PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_view_history_user_movie` (`user_id`, `movie_id`),
   KEY `idx_view_history_user_time` (`user_id`, `create_time`),
   KEY `idx_view_history_movie_id` (`movie_id`),
   CONSTRAINT `fk_view_history_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),

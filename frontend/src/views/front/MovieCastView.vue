@@ -1,13 +1,10 @@
 <template>
   <section class="cast-view-container space-y-4">
     <div>
-      <RouterLink 
-        :to="`/movies/${id}`" 
-        class="back-link inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-85 no-underline select-none transition"
-      >
+      <a :href="'/movies/' + id" class="back-link inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-85 no-underline select-none transition" @click.prevent="goBack">
         <span class="text-base font-bold">&lt;</span>
         <span>返回</span>
-      </RouterLink>
+      </a>
     </div>
 
     <div v-if="movie" class="space-y-6">
@@ -64,7 +61,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRouter } from 'vue-router'
 import { getMovieDetail } from '@/api/movie'
 import { mockMovies } from '@/utils/mockData'
 
@@ -76,6 +73,12 @@ const props = defineProps({
 })
 
 const movie = ref(null)
+const router = useRouter()
+
+function goBack() {
+  if (window.history.state?.back) router.back()
+  else router.push('/movies/' + props.id)
+}
 
 function personLink(person) {
   if (!person || !person.id || !person.personType) {

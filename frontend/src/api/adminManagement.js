@@ -19,9 +19,6 @@ export const deleteDictionary = (type, id) => request({ url: `/admin/${type}/${i
 export const pagePeople = (type, params) => request({ url: `/admin/${type}`, method: 'get', params })
 export const savePerson = (type, id, data) => request({ url: id ? `/admin/${type}/${id}` : `/admin/${type}`, method: id ? 'put' : 'post', data })
 export const deletePerson = (type, id) => request({ url: `/admin/${type}/${id}`, method: 'delete' })
-export const pageAnnouncements = (params) => request({ url: '/admin/announcements', method: 'get', params })
-export const saveAnnouncement = (id, data) => request({ url: id ? `/admin/announcements/${id}` : '/admin/announcements', method: id ? 'put' : 'post', data })
-export const deleteAnnouncement = (id) => request({ url: `/admin/announcements/${id}`, method: 'delete' })
 export const importPopularMovies = (limit) => request({
   url: '/admin/tmdb/import/popular',
   method: 'post',

@@ -33,7 +33,7 @@ const items = [
   ['/admin/movies', '影片管理', '片库维护与上下架'],
   ['/admin/users', '用户管理', '账户状态与互动档案'],
   ['/admin/comments', '评论管理', '社区内容审核'],
-  ['/admin/content', '基础资料', '分类、标签与人物公告'],
+  ['/admin/content', '基础资料', '分类、标签与人物资料'],
   ['/admin/tmdb', 'TMDB 导入', '外部影片数据同步']
 ]
 

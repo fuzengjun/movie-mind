@@ -30,8 +30,4 @@ public interface AdminManagementService {
     PageResult<Map<String, Object>> listPeople(String type, String keyword, long pageNum, long pageSize);
     Long savePerson(String type, Long id, Map<String, Object> payload);
     void deletePerson(String type, Long id);
-
-    PageResult<Map<String, Object>> listAnnouncements(String keyword, long pageNum, long pageSize);
-    Long saveAnnouncement(Long id, Map<String, Object> payload);
-    void deleteAnnouncement(Long id);
 }

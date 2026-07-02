@@ -166,7 +166,6 @@ async function loadPerson() {
     error.value = err?.message || '人物信息加载失败，请稍后重试'
   } finally {
     loading.value = false
-    window.scrollTo({ top: 0, behavior: 'instant' })
   }
 }
 
