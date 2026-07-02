@@ -600,6 +600,8 @@ onBeforeUnmount(() => {
   display: grid;
   grid-auto-flow: column;
   grid-template-rows: repeat(2, 38px);
+  grid-auto-columns: max-content;
+  align-items: start;
   gap: 8px;
   overflow-x: auto;
   width: 100%;
@@ -663,6 +665,8 @@ onBeforeUnmount(() => {
 .movie-provider-chip {
   flex-shrink: 0;
   display: inline-flex;
+  width: max-content;
+  justify-self: start;
   align-items: center;
   gap: 8px;
   height: 38px;
@@ -685,9 +689,10 @@ onBeforeUnmount(() => {
 
 .movie-provider-name {
   --name-width: 130px;
+  width: fit-content;
   max-width: var(--name-width);
-  flex-grow: 1;
-  min-width: 0; /* 防止子元素展开 duplicate 时撑大 flex 容器，解决胶囊自动变长的 Bug */
+  flex: 0 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
