@@ -3,6 +3,7 @@ package com.example.movie.service.impl;
 import com.example.movie.common.PageResult;
 import com.example.movie.dto.admin.AdminMovieRequest;
 import com.example.movie.service.AdminManagementService;
+import com.example.movie.utils.RegionNormalizer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -82,7 +83,7 @@ public class AdminManagementServiceImpl implements AdminManagementService {
                     average_rating,tmdb_rating,favorite_count,view_count,status,deleted,create_time,update_time)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,0,0,?,0,NOW(),NOW())
                 """, r.getTitle(), r.getOriginalTitle(), r.getOverview(), r.getPosterUrl(), r.getBackdropUrl(),
-                date(r.getReleaseDate()), r.getRuntime(), r.getRegion(), r.getLanguage(), value(r.getAverageRating(), 0),
+                date(r.getReleaseDate()), r.getRuntime(), RegionNormalizer.normalize(r.getRegion()), r.getLanguage(), value(r.getAverageRating(), 0),
                 value(r.getAverageRating(), 0), normalizeStatus(r.getStatus()));
         Long id = jdbcTemplate.queryForObject("SELECT LAST_INSERT_ID()", Long.class);
         syncMovieRelations(id, r);
@@ -95,7 +96,7 @@ public class AdminManagementServiceImpl implements AdminManagementService {
                 UPDATE movie SET title=?,original_title=?,overview=?,poster_url=?,backdrop_url=?,release_date=?,runtime=?,
                     region=?,language=?,average_rating=?,status=?,update_time=NOW() WHERE id=? AND deleted=0
                 """, r.getTitle(), r.getOriginalTitle(), r.getOverview(), r.getPosterUrl(), r.getBackdropUrl(),
-                date(r.getReleaseDate()), r.getRuntime(), r.getRegion(), r.getLanguage(), value(r.getAverageRating(), 0),
+                date(r.getReleaseDate()), r.getRuntime(), RegionNormalizer.normalize(r.getRegion()), r.getLanguage(), value(r.getAverageRating(), 0),
                 normalizeStatus(r.getStatus()), id);
         ensureChanged(changed, "影片不存在");
         syncMovieRelations(id, r);
