@@ -141,6 +141,11 @@ const axisColor = computed(() => themeMode.value === 'dark' ? '#a8a197' : '#7b74
 const lineColor = computed(() => themeMode.value === 'dark' ? '#ff8d4f' : '#ef7b45')
 const barColor = computed(() => themeMode.value === 'dark' ? '#ffc18f' : '#c96d3f')
 const panelColor = computed(() => themeMode.value === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)')
+const pieColors = computed(() => {
+  return themeMode.value === 'dark'
+    ? ['#ff8d4f', '#4fa8ff', '#5fe09f', '#ffdf7a', '#c29eff', '#ff8fa3', '#66e0e0']
+    : ['#ef7b45', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4']
+})
 
 const heroMovie = computed(() => stats.value?.hotMovies?.[0] || null)
 const heroStyle = computed(() => {
@@ -198,6 +203,7 @@ const yearOption = computed(() => ({
 
 function pieOption(source) {
   return {
+    color: pieColors.value,
     tooltip: { trigger: 'item', confine: true, formatter: '{b}<br/>{c}（{d}%）', backgroundColor: panelColor.value, borderWidth: 0, textStyle: { color: themeMode.value === 'dark' ? '#f5f1ea' : '#161615' } },
     legend: {
       type: 'scroll',
@@ -224,7 +230,7 @@ function pieOption(source) {
         scaleSize: 6,
         label: { show: true, position: 'center', formatter: '{b}\n{d}%', color: axisColor.value, fontSize: 12, fontWeight: 600, lineHeight: 18 }
       },
-      data: source.map((item, index) => ({ ...item, itemStyle: { color: index % 2 === 0 ? lineColor.value : barColor.value } }))
+      data: source
     }]
   }
 }
