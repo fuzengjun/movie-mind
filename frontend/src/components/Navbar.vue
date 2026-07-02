@@ -17,12 +17,18 @@
       
       <!-- 右侧登录按钮 -->
       <div class="hidden items-center gap-3 md:flex">
-        <button class="theme-toggle" @click="toggleTheme" :title="isDark ? '切换亮色模式' : '切换暗色模式'">
-          <svg v-if="!isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+        <button class="theme-toggle" @click="cycleTheme" :title="themeTitle">
+          <!-- 浅色模式图标：太阳 -->
+          <svg v-if="currentSetting === 'light'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
           </svg>
-          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+          <!-- 深色模式图标：月亮 -->
+          <svg v-else-if="currentSetting === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- 跟随系统图标：显示器 -->
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
           </svg>
         </button>
         <template v-if="userStore.token">
@@ -50,15 +56,30 @@
         <RouterLink v-if="userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/profile" @click="drawerVisible = false">个人中心</RouterLink>
         <RouterLink v-if="isAdmin" class="block rounded-xl px-4 py-3 nav-link" to="/admin" @click="drawerVisible = false">后台</RouterLink>
         <div class="mobile-theme-row">
-          <span class="text-sm text-[var(--text-secondary)]">{{ isDark ? '暗色模式' : '亮色模式' }}</span>
-          <button class="theme-toggle" @click="toggleTheme">
-            <svg v-if="!isDark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-            <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-            </svg>
-          </button>
+          <span class="text-sm text-[var(--text-secondary)]">{{ themeLabel }}</span>
+          <div class="mobile-theme-btns">
+            <button
+              v-for="opt in themeOptions"
+              :key="opt.value"
+              class="mobile-theme-opt"
+              :class="{ active: currentSetting === opt.value }"
+              @click="setTheme(opt.value)"
+              :title="opt.label"
+            >
+              <!-- 太阳 -->
+              <svg v-if="opt.value === 'light'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              <!-- 月亮 -->
+              <svg v-else-if="opt.value === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+              </svg>
+              <!-- 显示器 -->
+              <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
+              </svg>
+            </button>
+          </div>
         </div>
         <button v-if="userStore.token" class="mobile-logout" type="button" @click="handleLogout">退出登录</button>
         <RouterLink v-if="!userStore.token" class="block rounded-xl px-4 py-3 nav-link" to="/register" @click="drawerVisible = false">注册</RouterLink>
@@ -75,13 +96,30 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
-import { useThemeMode, toggleTheme } from '@/utils/theme'
+import { useThemeMode, useThemeSetting, toggleTheme, setTheme } from '@/utils/theme'
 
 const router = useRouter()
 const userStore = useUserStore()
 const isAdmin = computed(() => userStore.profile?.role === 'ADMIN')
 const isDark = computed(() => useThemeMode().value === 'dark')
+const currentSetting = computed(() => useThemeSetting().value)
 const drawerVisible = ref(false)
+
+const themeOptions = [
+  { value: 'light', label: '浅色' },
+  { value: 'dark', label: '深色' },
+  { value: 'system', label: '跟随系统' }
+]
+
+const settingLabels = { light: '浅色模式', dark: '深色模式', system: '跟随系统' }
+const themeLabel = computed(() => settingLabels[currentSetting.value] || '跟随系统')
+
+const titleMap = { light: '当前：浅色模式，点击切换', dark: '当前：深色模式，点击切换', system: '当前：跟随系统，点击切换' }
+const themeTitle = computed(() => titleMap[currentSetting.value] || '')
+
+function cycleTheme() {
+  toggleTheme()
+}
 
 async function handleLogout() {
   userStore.logout()
@@ -135,5 +173,34 @@ async function handleLogout() {
   border-radius: 12px;
   background: var(--surface-secondary);
   border: 1px solid var(--border-soft);
+}
+.mobile-theme-btns {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 3px;
+  border: 1px solid var(--border-soft);
+}
+.mobile-theme-opt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.mobile-theme-opt.active {
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.mobile-theme-opt:hover:not(.active) {
+  color: var(--text-secondary);
 }
 </style>
