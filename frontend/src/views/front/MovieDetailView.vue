@@ -44,8 +44,8 @@
                       <span class="movie-provider-name-inner">
                         <span class="marquee-text">{{ provider.name }}</span>
                         <span class="marquee-spacer"></span>
-                        <span class="marquee-text">{{ provider.name }}</span>
-                        <span class="marquee-spacer"></span>
+                        <span class="marquee-text marquee-text-duplicate">{{ provider.name }}</span>
+                        <span class="marquee-spacer marquee-spacer-duplicate"></span>
                       </span>
                     </span>
                     <span class="movie-provider-type">{{ accessTypeText(provider.accessType) }}</span>
@@ -252,6 +252,33 @@ async function resetProviderRailPosition() {
   requestAnimationFrame(() => requestAnimationFrame(updateProviderControls))
 }
 
+function freezeProviderChipSize(chip, nameEl) {
+  const chipWidth = chip.getBoundingClientRect().width
+  const nameWidth = nameEl.getBoundingClientRect().width
+  const chipPixels = chipWidth + 'px'
+  const namePixels = nameWidth + 'px'
+  chip.style.width = chipPixels
+  chip.style.minWidth = chipPixels
+  chip.style.maxWidth = chipPixels
+  chip.style.flex = '0 0 ' + chipPixels
+  nameEl.style.width = namePixels
+  nameEl.style.minWidth = namePixels
+  nameEl.style.maxWidth = namePixels
+  nameEl.style.flex = '0 0 ' + namePixels
+}
+
+function releaseProviderChipSize(chip) {
+  const nameEl = chip.querySelector('.movie-provider-name')
+  chip.style.removeProperty('width')
+  chip.style.removeProperty('min-width')
+  chip.style.removeProperty('max-width')
+  chip.style.removeProperty('flex')
+  nameEl?.style.removeProperty('width')
+  nameEl?.style.removeProperty('min-width')
+  nameEl?.style.removeProperty('max-width')
+  nameEl?.style.removeProperty('flex')
+}
+
 function handleProviderMouseEnter(event) {
   const chip = event.currentTarget
   const nameEl = chip.querySelector('.movie-provider-name')
@@ -267,6 +294,7 @@ function handleProviderMouseEnter(event) {
   
   const isOverflow = singleTextEl.offsetWidth > nameEl.clientWidth
   if (isOverflow) {
+    freezeProviderChipSize(chip, nameEl)
     chip.classList.add('is-overflowing')
     chip._marqueeTimeoutId = setTimeout(() => {
       chip.classList.add('is-animating')
@@ -286,6 +314,7 @@ function handleProviderMouseLeave(event) {
     chip.dataset.shouldStop = 'true'
   } else {
     chip.classList.remove('is-overflowing')
+    releaseProviderChipSize(chip)
   }
 }
 
@@ -295,6 +324,7 @@ function handleProviderAnimationIteration(event) {
     chip.classList.remove('is-animating')
     chip.classList.remove('is-overflowing')
     chip.dataset.shouldStop = 'false'
+    releaseProviderChipSize(chip)
   }
 }
 const relatedSource = ref([])
@@ -655,7 +685,9 @@ onBeforeUnmount(() => {
 
 .movie-provider-name {
   --name-width: 130px;
-  width: var(--name-width);
+  max-width: var(--name-width);
+  flex-grow: 1;
+  min-width: 0; /* 防止子元素展开 duplicate 时撑大 flex 容器，解决胶囊自动变长的 Bug */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -681,11 +713,8 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
 }
 
-.movie-provider-name-inner > .marquee-text:last-of-type {
-  display: none;
-}
-
-.movie-provider-name-inner > .marquee-spacer:last-of-type {
+.marquee-text-duplicate,
+.marquee-spacer-duplicate {
   display: none;
 }
 
@@ -694,11 +723,7 @@ onBeforeUnmount(() => {
   display: inline-block;
 }
 
-.movie-provider-chip.is-overflowing .movie-provider-name-inner > .marquee-text:last-of-type {
-  display: inline-block;
-}
-
-.movie-provider-chip.is-overflowing .movie-provider-name-inner > .marquee-spacer:last-of-type {
+.movie-provider-chip.is-overflowing .marquee-text-duplicate {
   display: inline-block;
 }
 
@@ -718,6 +743,8 @@ onBeforeUnmount(() => {
 }
 
 .movie-provider-type {
+  margin-left: auto; /* 将“租赁/订阅”等文案推至胶囊最右侧 */
+  flex-shrink: 0;
   color: rgba(255, 255, 255, 0.55);
   font-size: 0.65rem;
 }
