@@ -64,48 +64,63 @@
       </section>
     </div>
 
-    <div class="grid min-w-0 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-      <section class="surface-card p-5 md:p-6">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="section-kicker text-xs">Ranking</p>
-            <h3 class="mt-2 text-2xl font-semibold">内容榜单</h3>
-          </div>
-          <div class="flex gap-2">
-            <button class="pill-button" :class="{ 'is-active': rankingTab === 'favorite' }" @click="rankingTab = 'favorite'">收藏榜</button>
-            <button class="pill-button" :class="{ 'is-active': rankingTab === 'view' }" @click="rankingTab = 'view'">浏览榜</button>
-          </div>
+    <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
+      <div class="flex items-center justify-between gap-3">
+        <div>
+          <p class="section-kicker text-xs">Highlights</p>
+          <h3 class="mt-2 text-2xl font-semibold">热门影片条带</h3>
         </div>
-        <div class="mt-5 space-y-3">
-          <article v-for="(item, index) in activeRanking" :key="`${rankingTab}-${item.id}`" class="surface-card-soft flex items-center gap-4 p-3">
-            <div class="w-8 text-center text-sm font-semibold text-[var(--text-muted)]">{{ index + 1 }}</div>
-            <img v-if="item.posterUrl" :src="item.posterUrl" :alt="item.title" class="h-20 w-14 rounded-2xl object-cover" />
-            <div v-else class="h-20 w-14 rounded-2xl" style="background: var(--poster-fallback)"></div>
-            <div class="min-w-0 flex-1">
-              <h4 class="truncate text-base font-medium">{{ item.title }}</h4>
-              <p class="mt-1 text-sm text-[var(--text-muted)]">评分 {{ item.averageRating || '0.0' }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-xl font-semibold">{{ item.metricValue }}</p>
-              <p class="text-xs text-[var(--text-muted)]">{{ item.metricLabel }}</p>
-            </div>
-          </article>
-        </div>
-      </section>
+        <button class="pill-button" @click="fetchStatistics">刷新</button>
+      </div>
+      <div class="mt-5">
+        <ContentRail title="" :movies="stats?.hotMovies || []" controls />
+      </div>
+    </section>
 
-      <section class="surface-card min-w-0 overflow-hidden p-5 md:p-6">
-        <div class="flex items-center justify-between gap-3">
-          <div>
-            <p class="section-kicker text-xs">Highlights</p>
-            <h3 class="mt-2 text-2xl font-semibold">热门影片条带</h3>
+    <section class="surface-card p-5 md:p-6">
+      <div class="mb-5">
+        <p class="section-kicker text-xs">Ranking</p>
+        <h3 class="mt-2 text-2xl font-semibold">内容榜单</h3>
+      </div>
+      <div class="grid gap-6 md:grid-cols-2">
+        <div>
+          <h4 class="mb-3 text-lg font-medium text-[var(--text-secondary)]">收藏榜</h4>
+          <div class="space-y-3">
+            <article v-for="(item, index) in stats?.favoriteRanking" :key="`fav-${item.id}`" class="surface-card-soft flex items-center gap-4 p-3">
+              <div class="w-8 text-center text-sm font-semibold text-[var(--text-muted)]">{{ index + 1 }}</div>
+              <img v-if="item.posterUrl" :src="item.posterUrl" :alt="item.title" class="h-20 w-14 rounded-2xl object-cover" />
+              <div v-else class="h-20 w-14 rounded-2xl" style="background: var(--poster-fallback)"></div>
+              <div class="min-w-0 flex-1">
+                <h4 class="truncate text-base font-medium">{{ item.title }}</h4>
+                <p class="mt-1 text-sm text-[var(--text-muted)]">评分 {{ item.averageRating || '0.0' }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xl font-semibold">{{ item.metricValue }}</p>
+                <p class="text-xs text-[var(--text-muted)]">{{ item.metricLabel }}</p>
+              </div>
+            </article>
           </div>
-          <button class="pill-button" @click="fetchStatistics">刷新</button>
         </div>
-        <div class="mt-5">
-          <ContentRail title="" :movies="stats?.hotMovies || []" controls />
+        <div>
+          <h4 class="mb-3 text-lg font-medium text-[var(--text-secondary)]">浏览榜</h4>
+          <div class="space-y-3">
+            <article v-for="(item, index) in stats?.viewRanking" :key="`view-${item.id}`" class="surface-card-soft flex items-center gap-4 p-3">
+              <div class="w-8 text-center text-sm font-semibold text-[var(--text-muted)]">{{ index + 1 }}</div>
+              <img v-if="item.posterUrl" :src="item.posterUrl" :alt="item.title" class="h-20 w-14 rounded-2xl object-cover" />
+              <div v-else class="h-20 w-14 rounded-2xl" style="background: var(--poster-fallback)"></div>
+              <div class="min-w-0 flex-1">
+                <h4 class="truncate text-base font-medium">{{ item.title }}</h4>
+                <p class="mt-1 text-sm text-[var(--text-muted)]">评分 {{ item.averageRating || '0.0' }}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-xl font-semibold">{{ item.metricValue }}</p>
+                <p class="text-xs text-[var(--text-muted)]">{{ item.metricLabel }}</p>
+              </div>
+            </article>
+          </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -120,7 +135,6 @@ const themeMode = useThemeMode()
 const loading = ref(false)
 const range = ref(30)
 const stats = ref(null)
-const rankingTab = ref('favorite')
 const rangeOptions = [7, 30, 90]
 
 const axisColor = computed(() => themeMode.value === 'dark' ? '#a8a197' : '#7b746a')
@@ -144,7 +158,6 @@ const summaryCards = computed(() => {
     { label: '总收藏 / 评分', value: `${summary.totalFavorites || 0} / ${summary.totalRatings || 0}`, hint: '互动热度与口碑信号' }
   ]
 })
-const activeRanking = computed(() => rankingTab.value === 'favorite' ? (stats.value?.favoriteRanking || []) : (stats.value?.viewRanking || []))
 
 function baseChart() {
   return {
