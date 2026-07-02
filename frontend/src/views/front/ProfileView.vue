@@ -1,10 +1,425 @@
-<template><section class="space-y-6 pt-20"><div class="surface-card p-6"><p class="section-kicker">My Movie Mind</p><h1>个人中心</h1><p>管理资料，以及你的收藏、评分、想看和看过记录。</p></div><div class="surface-card p-6"><el-tabs v-model="tab" @tab-change="load"><el-tab-pane label="个人资料" name="profile"><el-form label-position="top" class="profile-form"><el-form-item label="用户名"><el-input :model-value="form.username" disabled/></el-form-item><el-form-item label="昵称"><el-input v-model="form.nickname"/></el-form-item><el-form-item label="邮箱"><el-input v-model="form.email"/></el-form-item></el-form><button class="pill-button is-active" @click="saveProfile">保存资料</button><el-divider/><h3>修改密码</h3><el-form label-position="top" class="profile-form"><el-form-item label="原密码"><el-input v-model="password.oldPassword" type="password" show-password/></el-form-item><el-form-item label="新密码"><el-input v-model="password.newPassword" type="password" show-password/></el-form-item><el-form-item label="确认新密码"><el-input v-model="password.confirmPassword" type="password" show-password/></el-form-item></el-form><button class="pill-button" @click="changePassword">修改密码</button></el-tab-pane><el-tab-pane v-for="item in tabs" :key="item.name" :label="item.label" :name="item.name"><div class="record-grid"><RouterLink v-for="r in records" :key="r.id" :to="`/movies/${r.movieId}`" class="record-card"><img v-if="r.posterUrl" :src="r.posterUrl"/><div><b>{{r.title}}</b><p v-if="r.score">我的评分：{{r.score}}</p><small>{{format(r.actionTime)}}</small></div></RouterLink></div><el-empty v-if="!records.length" :description="'还没有'+item.label+'记录'"/></el-tab-pane></el-tabs></div></section></template>
+<template>
+  <section class="max-w-6xl mx-auto px-4 py-8 pt-24 min-h-[80vh]">
+    <!-- Title Header Banner -->
+    <div class="mb-8 pb-2 border-b border-soft">
+      <p class="section-kicker text-xs font-semibold tracking-wider text-[var(--text-secondary)] uppercase">Account Settings</p>
+      <h1 class="text-3xl font-bold tracking-tight text-[var(--text-primary)] mt-1">个人中心</h1>
+      <p class="text-sm text-[var(--text-muted)] mt-1">管理个人资料，查看并跟踪您的影视收藏与互动轨迹。</p>
+    </div>
+
+    <!-- Main Content Layout Grid -->
+    <div class="profile-layout">
+      <!-- Left Column: Sidebar Cards -->
+      <aside class="sidebar-wrapper space-y-6">
+        <!-- User Info Summary Card -->
+        <div class="surface-card p-6 flex flex-col items-center text-center">
+          <div class="profile-avatar-outer">
+            <div class="profile-avatar-inner">
+              {{ store.profile?.nickname?.[0] || 'U' }}
+            </div>
+          </div>
+          <h2 class="mt-4 text-xl font-bold tracking-tight text-[var(--text-primary)]">
+            {{ store.profile?.nickname || '未知用户' }}
+          </h2>
+          <p class="text-xs text-[var(--text-secondary)] mt-1">@{{ store.profile?.username }}</p>
+          <div class="mt-4 inline-flex items-center justify-center px-4 py-1.5 text-xs font-semibold rounded-full bg-accent-glow border border-accent-soft text-accent whitespace-nowrap">
+            {{ store.profile?.role === 'ADMIN' ? '系统管理员' : '普通用户' }}
+          </div>
+        </div>
+
+        <!-- Sidebar Navigation Menu -->
+        <div class="surface-card overflow-hidden p-2">
+          <nav class="sidebar-menu">
+            <button 
+              v-for="item in menuItems" 
+              :key="item.name" 
+              class="menu-item" 
+              :class="{ 'is-active': tab === item.name }" 
+              @click="changeSection(item.name)"
+            >
+              <el-icon class="menu-icon"><component :is="item.icon" /></el-icon>
+              <span class="menu-label">{{ item.label }}</span>
+              <el-icon class="menu-arrow"><ArrowRight /></el-icon>
+            </button>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Right Column: Settings Content Cards -->
+      <main class="content-panel">
+        <!-- Tab Panel: Profile Editing -->
+        <div v-if="tab === 'profile'" class="surface-card p-6 md:p-8 space-y-6">
+          <div class="panel-header border-b border-soft pb-4">
+            <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">个人资料</h2>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">查看和管理您的账号基本信息。</p>
+          </div>
+          <el-form label-position="top" class="profile-form">
+            <el-form-item label="用户名 (不可修改)">
+              <el-input :model-value="form.username" disabled />
+            </el-form-item>
+            <el-form-item label="昵称">
+              <el-input v-model="form.nickname" placeholder="请输入您的昵称" />
+            </el-form-item>
+            <el-form-item label="邮箱">
+              <el-input v-model="form.email" placeholder="请输入您的电子邮箱" />
+            </el-form-item>
+            <button class="pill-button is-active mt-4" @click="saveProfile">保存资料</button>
+          </el-form>
+        </div>
+
+        <!-- Tab Panel: Security Password Editing -->
+        <div v-else-if="tab === 'password'" class="surface-card p-6 md:p-8 space-y-6">
+          <div class="panel-header border-b border-soft pb-4">
+            <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">安全与密码</h2>
+            <p class="text-sm text-[var(--text-secondary)] mt-1">建议定期修改密码以确保您的账号安全。</p>
+          </div>
+          <el-form label-position="top" class="profile-form">
+            <el-form-item label="原密码">
+              <el-input v-model="password.oldPassword" type="password" show-password placeholder="请输入原密码" />
+            </el-form-item>
+            <el-form-item label="新密码">
+              <el-input v-model="password.newPassword" type="password" show-password placeholder="请输入新密码，最少 6 位" />
+            </el-form-item>
+            <el-form-item label="确认新密码">
+              <el-input v-model="password.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
+            </el-form-item>
+            <button class="pill-button is-active mt-4" @click="changePassword">修改密码</button>
+          </el-form>
+        </div>
+
+        <!-- Tab Panel: Movie Record Grids -->
+        <div v-else class="surface-card p-6 md:p-8 space-y-6">
+          <div class="panel-header border-b border-soft pb-4 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">{{ currentTabLabel }}</h2>
+              <p class="text-sm text-[var(--text-secondary)] mt-1">管理和查看您的{{ currentTabLabel }}历史记录。</p>
+            </div>
+            <span class="detail-chip" v-if="records.length">共 {{ records.length }} 个记录</span>
+          </div>
+
+          <div v-loading="loadingRecords" class="min-h-[200px] flex flex-col justify-center">
+            <div v-if="records.length" class="record-grid">
+              <RouterLink 
+                v-for="r in records" 
+                :key="r.id" 
+                :to="`/movies/${r.movieId}`" 
+                class="record-card-new"
+              >
+                <div class="record-poster-wrapper">
+                  <img v-if="r.posterUrl" :src="r.posterUrl" :alt="r.title" class="record-poster" />
+                  <div v-else class="record-poster-fallback">
+                    <span>{{ r.title?.[0] }}</span>
+                  </div>
+                  <!-- Rating Badge Overlay -->
+                  <div class="record-badge" v-if="r.score">
+                    <el-icon class="text-yellow-400 mr-xs"><StarFilled /></el-icon>
+                    <span>{{ r.score }} 分</span>
+                  </div>
+                </div>
+                <div class="record-info">
+                  <h3 class="record-title" :title="r.title">{{ r.title }}</h3>
+                  <p class="record-time">{{ format(r.actionTime) }}</p>
+                </div>
+              </RouterLink>
+            </div>
+            <el-empty v-else :description="'暂无' + currentTabLabel + '记录'" />
+          </div>
+        </div>
+      </main>
+    </div>
+  </section>
+</template>
+
 <script setup>
-import{onMounted,reactive,ref}from'vue';import{ElMessage}from'element-plus';import{useRouter}from'vue-router';import{getProfile,updateProfile,changePassword as updatePassword}from'@/api/user';import{getMyRecords}from'@/api/interaction';import{useUserStore}from'@/stores/user'
-const store=useUserStore(),router=useRouter(),tab=ref('profile'),records=ref([]),form=reactive({username:'',nickname:'',email:''}),password=reactive({oldPassword:'',newPassword:'',confirmPassword:''}),tabs=[{name:'favorites',label:'收藏'},{name:'ratings',label:'评分'},{name:'watchlist',label:'想看'},{name:'watched',label:'看过'},{name:'views',label:'浏览'}]
-async function init(){const r=await getProfile();Object.assign(form,r.data);store.setProfile({...store.profile,...r.data})}
-async function load(name){if(!name||name==='profile')return;const r=await getMyRecords(name,{pageSize:50});records.value=r.data?.records||[]}
-async function saveProfile(){const r=await updateProfile(form);store.setProfile({...store.profile,...r.data});ElMessage.success('资料已保存')}
-async function changePassword(){await updatePassword(password);store.logout();ElMessage.success('密码已修改，请重新登录');router.push('/login')}
-const format=v=>v?new Date(v).toLocaleString('zh-CN'):'';onMounted(init)
-</script><style scoped>.profile-form{max-width:520px}.record-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}.record-card{display:flex;gap:14px;padding:12px;border:1px solid var(--border-soft);border-radius:16px;color:var(--text-primary);text-decoration:none}.record-card img{width:58px;height:82px;border-radius:8px;object-fit:cover}.record-card p,.record-card small{color:var(--text-muted)}</style>
+import { computed, onMounted, reactive, ref } from 'vue'
+import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { getProfile, updateProfile, changePassword as updatePassword } from '@/api/user'
+import { getMyRecords } from '@/api/interaction'
+import { useUserStore } from '@/stores/user'
+import { 
+  User, 
+  Lock, 
+  Star, 
+  StarFilled, 
+  Calendar, 
+  CircleCheck, 
+  Clock, 
+  ArrowRight 
+} from '@element-plus/icons-vue'
+
+const store = useUserStore()
+const router = useRouter()
+const tab = ref('profile')
+const records = ref([])
+const loadingRecords = ref(false)
+
+const form = reactive({
+  username: '',
+  nickname: '',
+  email: ''
+})
+
+const password = reactive({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const menuItems = [
+  { name: 'profile', label: '个人资料', icon: User },
+  { name: 'password', label: '安全与密码', icon: Lock },
+  { name: 'favorites', label: '我的收藏', icon: Star },
+  { name: 'ratings', label: '评分记录', icon: StarFilled },
+  { name: 'watchlist', label: '想看清单', icon: Calendar },
+  { name: 'watched', label: '看过记录', icon: CircleCheck },
+  { name: 'views', label: '浏览历史', icon: Clock }
+]
+
+const currentTabLabel = computed(() => {
+  const item = menuItems.find(i => i.name === tab.value)
+  return item ? item.label : ''
+})
+
+async function init() {
+  const r = await getProfile()
+  Object.assign(form, r.data)
+  store.setProfile({ ...store.profile, ...r.data })
+}
+
+async function load(name) {
+  if (!name || name === 'profile' || name === 'password') return
+  loadingRecords.value = true
+  try {
+    const r = await getMyRecords(name, { pageSize: 50 })
+    records.value = r.data?.records || []
+  } finally {
+    loadingRecords.value = false
+  }
+}
+
+async function changeSection(name) {
+  tab.value = name
+  await load(name)
+}
+
+async function saveProfile() {
+  const r = await updateProfile(form)
+  store.setProfile({ ...store.profile, ...r.data })
+  ElMessage.success('资料已保存')
+}
+
+async function changePassword() {
+  await updatePassword(password)
+  store.logout()
+  ElMessage.success('密码已修改，请重新登录')
+  router.push('/login')
+}
+
+const format = v => v ? new Date(v).toLocaleString('zh-CN', { hour12: false }).slice(0, 16) : ''
+
+onMounted(init)
+</script>
+
+<style scoped>
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 24px;
+}
+@media (min-width: 1024px) {
+  .profile-layout {
+    grid-template-columns: 280px 1fr;
+  }
+}
+
+.profile-form {
+  max-width: 480px;
+}
+
+/* Avatar styling */
+.profile-avatar-outer {
+  padding: 4px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef7b45, #ffc18f);
+  box-shadow: 0 8px 24px rgba(239, 123, 69, 0.2);
+}
+.profile-avatar-inner {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  border: 4px solid var(--surface-primary);
+}
+
+/* Role badge styling */
+.bg-accent-glow {
+  background: color-mix(in srgb, var(--accent-primary) 6%, transparent);
+}
+.border-accent-soft {
+  border-color: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+}
+.text-accent {
+  color: var(--accent-primary);
+}
+
+/* Sidebar navigation menu */
+.sidebar-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.menu-item:hover {
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+.menu-item.is-active {
+  background: color-mix(in srgb, var(--accent-primary) 8%, transparent);
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+.menu-icon {
+  margin-right: 12px;
+  font-size: 1.15rem;
+}
+.menu-arrow {
+  margin-left: auto;
+  font-size: 0.85rem;
+  opacity: 0.4;
+  transition: transform 0.2s ease;
+}
+.menu-item:hover .menu-arrow {
+  opacity: 0.8;
+  transform: translateX(2px);
+}
+.menu-item.is-active .menu-arrow {
+  opacity: 0.9;
+  color: var(--accent-primary);
+}
+
+/* Panel border divider */
+.border-soft {
+  border-color: var(--border-soft);
+}
+
+/* Movie record grid and cards */
+.record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 18px;
+}
+
+.record-card-new {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-secondary);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.record-card-new:hover {
+  transform: translateY(-4px);
+  background: var(--surface-primary);
+  border-color: color-mix(in srgb, var(--accent-primary) 20%, transparent);
+  box-shadow: var(--shadow-md);
+}
+
+.record-poster-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  background: var(--poster-fallback);
+  overflow: hidden;
+}
+
+.record-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+.record-card-new:hover .record-poster {
+  transform: scale(1.04);
+}
+
+.record-poster-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--text-muted);
+}
+
+.record-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.record-info {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.record-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.record-time {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.text-yellow-400 {
+  color: #fbbf24;
+}
+.mr-xs {
+  margin-right: 2px;
+}
+</style>
