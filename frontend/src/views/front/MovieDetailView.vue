@@ -69,7 +69,7 @@
       </div>
     </div>
 
-    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" />
+    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="actions" />
 
     <!-- 中部：关于 (About) 双列磨砂玻璃面板 -->
     <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
@@ -202,6 +202,9 @@
       :description="personalizedRelated ? '结合你的历史行为生成，并排除已经接触过的影片。' : '从同一片库中继续挑选相似气质的内容。'"
       :movies="relatedMovies" 
     />
+
+    <!-- 用户影评与讨论区 -->
+    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="comments" />
   </section>
 </template>
 
