@@ -36,12 +36,27 @@
 
             <div v-if="movie.watchProviders?.length" class="movie-provider-strip">
               <span class="movie-provider-region">{{ watchProviderRegionText }}</span>
-              <div class="movie-provider-list">
-                <div v-for="provider in movie.watchProviders" :key="provider.providerId" class="movie-provider-chip">
-                  <img v-if="provider.logoUrl" :src="provider.logoUrl" :alt="provider.name" class="movie-provider-logo" />
-                  <span class="movie-provider-name">{{ provider.name }}</span>
-                  <span class="movie-provider-type">{{ accessTypeText(provider.accessType) }}</span>
+              <div class="provider-rail-shell">
+                <div ref="providerRailRef" class="movie-provider-list" @scroll.passive="updateProviderControls">
+                  <div v-for="provider in movie.watchProviders" :key="provider.providerId" class="movie-provider-chip" @mouseenter="handleProviderMouseEnter" @mouseleave="handleProviderMouseLeave" @animationiteration="handleProviderAnimationIteration">
+                    <img v-if="provider.logoUrl" :src="provider.logoUrl" :alt="provider.name" class="movie-provider-logo" />
+                    <span class="movie-provider-name">
+                      <span class="movie-provider-name-inner">
+                        <span class="marquee-text">{{ provider.name }}</span>
+                        <span class="marquee-spacer"></span>
+                        <span class="marquee-text">{{ provider.name }}</span>
+                        <span class="marquee-spacer"></span>
+                      </span>
+                    </span>
+                    <span class="movie-provider-type">{{ accessTypeText(provider.accessType) }}</span>
+                  </div>
                 </div>
+                <button v-if="canScrollLeft" class="provider-rail-control provider-rail-control-left" type="button" aria-label="向左滚动播放渠道" @click="scrollProviderRail(-1)">
+                  <span>‹</span>
+                </button>
+                <button v-if="canScrollRight" class="provider-rail-control provider-rail-control-right" type="button" aria-label="向右滚动播放渠道" @click="scrollProviderRail(1)">
+                  <span>›</span>
+                </button>
               </div>
             </div>
           </div>
@@ -191,7 +206,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getMovieDetail, getMovieList } from '@/api/movie'
 import { getMyRecommend } from '@/api/recommend'
@@ -204,6 +219,81 @@ import { mockMovies } from '@/utils/mockData'
 const route = useRoute()
 const userStore = useUserStore()
 const movie = ref(null)
+
+// 播放渠道滚轨滚动状态控制
+const providerRailRef = ref(null)
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+const START_EPSILON = 12
+let providerResizeObserver = null
+
+function updateProviderControls() {
+  const rail = providerRailRef.value
+  if (!rail) return
+  canScrollLeft.value = rail.scrollLeft > START_EPSILON
+  canScrollRight.value = rail.scrollLeft + rail.clientWidth < rail.scrollWidth - 2
+}
+
+function scrollProviderRail(direction) {
+  const rail = providerRailRef.value
+  if (!rail) return
+  rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth' })
+}
+
+async function resetProviderRailPosition() {
+  canScrollLeft.value = false
+  await nextTick()
+  const rail = providerRailRef.value
+  if (!rail) return
+  rail.scrollTo({ left: 0, behavior: 'auto' })
+  requestAnimationFrame(() => requestAnimationFrame(updateProviderControls))
+}
+
+function handleProviderMouseEnter(event) {
+  const chip = event.currentTarget
+  const nameEl = chip.querySelector('.movie-provider-name')
+  const singleTextEl = chip.querySelector('.marquee-text')
+  
+  if (!nameEl || !singleTextEl) return
+  
+  chip.dataset.shouldStop = 'false'
+  if (chip._marqueeTimeoutId) {
+    clearTimeout(chip._marqueeTimeoutId)
+    chip._marqueeTimeoutId = null
+  }
+  
+  const isOverflow = singleTextEl.offsetWidth > nameEl.clientWidth
+  if (isOverflow) {
+    chip.classList.add('is-overflowing')
+    chip._marqueeTimeoutId = setTimeout(() => {
+      chip.classList.add('is-animating')
+      chip._marqueeTimeoutId = null
+    }, 1000)
+  }
+}
+
+function handleProviderMouseLeave(event) {
+  const chip = event.currentTarget
+  if (chip._marqueeTimeoutId) {
+    clearTimeout(chip._marqueeTimeoutId)
+    chip._marqueeTimeoutId = null
+  }
+  
+  if (chip.classList.contains('is-animating')) {
+    chip.dataset.shouldStop = 'true'
+  } else {
+    chip.classList.remove('is-overflowing')
+  }
+}
+
+function handleProviderAnimationIteration(event) {
+  const chip = event.currentTarget
+  if (chip.dataset.shouldStop === 'true') {
+    chip.classList.remove('is-animating')
+    chip.classList.remove('is-overflowing')
+    chip.dataset.shouldStop = 'false'
+  }
+}
 const relatedSource = ref([])
 const personalizedRelated = ref(false)
 
@@ -415,7 +505,22 @@ watch(
     loadMovie()
   }
 )
-onMounted(() => loadMovie())
+
+watch(() => movie.value?.watchProviders, () => {
+  resetProviderRailPosition()
+})
+
+onMounted(() => {
+  loadMovie()
+  if (window.ResizeObserver && providerRailRef.value) {
+    providerResizeObserver = new ResizeObserver(updateProviderControls)
+    providerResizeObserver.observe(providerRailRef.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  providerResizeObserver?.disconnect()
+})
 </script>
 
 <style scoped>
@@ -442,6 +547,7 @@ onMounted(() => loadMovie())
   align-items: flex-start;
   gap: 8px;
   margin-top: 14px;
+  width: 100%;
 }
 
 .movie-provider-region {
@@ -451,17 +557,83 @@ onMounted(() => loadMovie())
   letter-spacing: 0.04em;
 }
 
+.provider-rail-shell {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+}
+
 .movie-provider-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(2, 38px);
   gap: 8px;
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 2px;
+  scrollbar-width: none; /* 隐藏 Firefox 默认滚动条 */
+}
+.movie-provider-list::-webkit-scrollbar {
+  display: none; /* 隐藏 Chrome/Safari 默认滚动条 */
+}
+
+.provider-rail-control {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  display: grid;
+  width: 28px;
+  height: 48px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #ffffff;
+  background: rgba(20, 20, 20, 0.65);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-50%) scale(.94);
+  transition: opacity 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+.provider-rail-shell:hover .provider-rail-control {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(-50%) scale(1);
+}
+
+.provider-rail-shell:hover .provider-rail-control:hover {
+  background: rgba(20, 20, 20, 0.85);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.provider-rail-control span {
+  font-size: 24px;
+  font-weight: 300;
+  line-height: 1;
+  transform: translateY(-1px);
+}
+
+.provider-rail-control-left {
+  left: -12px;
+}
+.provider-rail-control-right {
+  right: -12px;
 }
 
 .movie-provider-chip {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 38px;
+  height: 38px;
+  box-sizing: border-box;
   padding: 5px 10px 5px 5px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
@@ -479,13 +651,67 @@ onMounted(() => loadMovie())
 }
 
 .movie-provider-name {
-  max-width: 150px;
+  --name-width: 130px;
+  width: var(--name-width);
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 650;
-  text-overflow: ellipsis;
+}
+
+.movie-provider-chip.is-animating .movie-provider-name {
+  text-overflow: clip; /* 正在执行动画时关闭省略号，防止完成最后一轮循环时省略号闪烁 */
+}
+
+.movie-provider-name-inner {
+  display: inline-flex;
+  align-items: center;
   white-space: nowrap;
+}
+
+.marquee-spacer {
+  display: none;
+  width: 32px;
+  flex-shrink: 0;
+}
+
+.movie-provider-name-inner > .marquee-text:last-of-type {
+  display: none;
+}
+
+.movie-provider-name-inner > .marquee-spacer:last-of-type {
+  display: none;
+}
+
+/* 当且仅当文字溢出时，显示复制的文字和间距，以备跑马灯无缝滚动 */
+.movie-provider-chip.is-overflowing .marquee-spacer {
+  display: inline-block;
+}
+
+.movie-provider-chip.is-overflowing .movie-provider-name-inner > .marquee-text:last-of-type {
+  display: inline-block;
+}
+
+.movie-provider-chip.is-overflowing .movie-provider-name-inner > .marquee-spacer:last-of-type {
+  display: inline-block;
+}
+
+/* 仅在文字实际超出最大宽度时，悬停 1s 后开始匀速无限跑马灯循环滚动 */
+@keyframes provider-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    /* 滚动到 -50%（正好是一个完整的文字加一个间距的距离）即可实现无缝循环 */
+    transform: translateX(-50%);
+  }
+}
+
+.movie-provider-chip.is-animating .movie-provider-name-inner {
+  animation: provider-marquee 8s linear infinite;
 }
 
 .movie-provider-type {
@@ -577,7 +803,7 @@ onMounted(() => loadMovie())
 
 @media (max-width: 640px) {
   .movie-provider-name {
-    max-width: 110px;
+    --name-width: 95px;
   }
 
   .movie-info-grid {
