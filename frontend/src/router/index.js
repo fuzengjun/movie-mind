@@ -21,7 +21,6 @@ import TmdbManageView from '@/views/admin/TmdbManageView.vue'
 import { useUserStore } from '@/stores/user'
 
 const routes=[{path:'/',component:FrontLayout,children:[{path:'',name:'home',component:HomeView},{path:'movies',name:'movies',component:MovieListView},{path:'rankings',name:'rankings',component:RankingView},{path:'movies/:id',name:'movie-detail',component:MovieDetailView,props:true},{path:'movies/:id/cast',name:'movie-cast',component:MovieCastView,props:true},{path:'people/:type/:id',name:'person-detail',component:PersonDetailView,props:true},{path:'people/:type/:id/works/:sectionKey',name:'person-works',component:PersonWorksView,props:true},{path:'login',name:'login',component:LoginView},{path:'register',name:'register',component:RegisterView},{path:'recommendations',name:'recommendations',component:RecommendationView,meta:{requiresAuth:true}},{path:'profile',name:'profile',component:ProfileView,meta:{requiresAuth:true}}]},{path:'/admin',component:AdminLayout,meta:{requiresAdmin:true},children:[{path:'',name:'admin-dashboard',component:DashboardView},{path:'movies',name:'admin-movies',component:MovieManagementView},{path:'users',name:'admin-users',component:UserManagementView},{path:'comments',name:'admin-comments',component:CommentManageView},{path:'content',name:'admin-content',component:ContentManageView},{path:'tmdb',name:'admin-tmdb',component:TmdbManageView}]}]
-const scrollPositions = new Map()
 if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'
 
 function restoreWhenReady(position) {
@@ -45,12 +44,10 @@ const router=createRouter({
   history:createWebHistory(),
   routes,
   scrollBehavior(to, from, savedPosition) {
-    const target = savedPosition || scrollPositions.get(to.fullPath)
-    return target ? restoreWhenReady(target) : { top: 0, left: 0 }
+    return savedPosition ? restoreWhenReady(savedPosition) : { top: 0, left: 0 }
   }
 })
-router.beforeEach((to, from) => {
-  if (from.fullPath) scrollPositions.set(from.fullPath, { top: window.scrollY, left: window.scrollX })
+router.beforeEach((to) => {
   const store = useUserStore()
   const requiresAdmin = to.matched.some((record) => record.meta.requiresAdmin)
   const requiresAuth = requiresAdmin || to.matched.some((record) => record.meta.requiresAuth)
