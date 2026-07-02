@@ -1,25 +1,6 @@
-### TMDB API 本地配置说明
+# Movie Mind API 补充说明
 
-出于安全原因，仓库中不保存真实的 TMDB 读令牌或 API Key。
-
-请将以下信息写入本地忽略文件 `backend/src/main/resources/application-local-secret.yml`，或配置为环境变量：
-
-```yml
-tmdb:
-  read-access-token: YOUR_TMDB_READ_ACCESS_TOKEN
-  base-url: https://api.themoviedb.org/3
-  image-base-url: https://image.tmdb.org/t/p/w780
-```
-
-对应环境变量：
-
-- `TMDB_READ_ACCESS_TOKEN`
-- `TMDB_BASE_URL`
-- `TMDB_IMAGE_BASE_URL`
-
-完成后可调用后端接口导入真实数据：
-
-- `POST /api/admin/tmdb/import/popular?limit=50`
+本文只记录 Movie Mind 后端向前端开放的项目接口。TMDB 和 DeepSeek 的外部服务配置、鉴权及上游调用方式见 [第三方 API 接入说明](./THIRD_PARTY_APIS.md)。完整接口列表和在线调试以 Swagger 为准。
 
 ## 电影详情扩展字段
 
@@ -62,12 +43,36 @@ tmdb:
 - POST|DELETE /api/watch-history/{id}：标记或取消“看过”；标记后自动移出想看。
 - GET /api/movies/rankings：分页排行榜，参数为 `type`、`pageNum`、`pageSize`。
 - GET /api/movies/{id}/similar?limit=8：按共同类型、标签、导演和演员获取相似影片。
-## 影片检索与 TMDB 单片导入
+## 影片检索与 TMDB 数据管理
 
 - GET /api/movies/page：参数 keyword、category、region、year、sort、pageNum、pageSize。
 - GET /api/movies/filters：返回可用类型、地区与年份。
 - GET /api/admin/tmdb/search?query={name}&page=1：按名称搜索 TMDB，结果包含 imported 状态。
 - POST /api/admin/tmdb/import/{tmdbId}：导入指定影片；已导入影片拒绝重复导入。
+以上 `/api/admin/**` 接口需要在请求头携带管理员 JWT：`Authorization: Bearer <token>`。
+
+## AI 影片助手接口
+
+`POST /api/assistant/chat` 将对话消息和可选的用户观影上下文发送给影片助手。该接口需要登录并携带 JWT。
+
+请求示例：
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "推荐几部科幻电影"}
+  ],
+  "userContext": {
+    "username": "示例用户",
+    "favorites": [{"id": 1, "title": "星际穿越"}],
+    "ratings": [{"id": 2, "title": "盗梦空间", "score": 9}],
+    "watched": [],
+    "watchlist": []
+  }
+}
+```
+
+响应的 `content` 是助手回答，`links` 是根据回答中的书名号片名匹配到的站内影片。未配置 DeepSeek 或上游请求失败时，接口会返回服务暂时不可用的提示文本。
 
 ## Redis 影片缓存
 
