@@ -33,7 +33,7 @@
         <el-table-column label="操作" width="210">
           <template #default="{row}">
             <el-button link type="primary" @click="showDetail(row)">详情</el-button>
-            <el-button link :type="row.status===1?'danger':'success'" @click="toggle(row)">
+            <el-button link :type="row.status===1?'danger':'success'" :disabled="row.id === userStore.profile?.id" @click="toggle(row)">
               {{ row.status === 1 ? '禁用' : '启用' }}
             </el-button>
             <el-button link type="warning" @click="reset(row)">重置密码</el-button>
@@ -63,9 +63,11 @@
 <script setup>import {onMounted, reactive, ref} from 'vue';
 import {ElMessage, ElMessageBox} from 'element-plus';
 import {pageAdminUsers, getAdminUser, setUserStatus, resetUserPassword} from '@/api/adminManagement';
+import {useUserStore} from '@/stores/user';
 import AdminPage from '@/components/admin/AdminPage.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 
+const userStore = useUserStore();
 const records = ref([]), total = ref(0), loading = ref(false), drawer = ref(false), detail = ref(null),
     query = reactive({keyword: '', status: null, pageNum: 1, pageSize: 10});
 
@@ -86,6 +88,10 @@ function search() {
 }
 
 async function toggle(row) {
+  if (row.id === userStore.profile?.id) {
+    ElMessage.warning('不能操作当前登录账号的状态');
+    return;
+  }
   await setUserStatus(row.id, row.status === 1 ? 0 : 1);
   ElMessage.success('用户状态已更新');
   load()

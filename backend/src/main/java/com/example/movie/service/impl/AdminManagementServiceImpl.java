@@ -165,6 +165,16 @@ public class AdminManagementServiceImpl implements AdminManagementService {
 
     @Override
     public void updateUserStatus(Long id, Integer status) {
+        if (status != null && status == 0) {
+            var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null) {
+                String currentUsername = auth.getName();
+                List<String> usernames = jdbcTemplate.queryForList("SELECT username FROM user WHERE id=? AND deleted=0", String.class, id);
+                if (!usernames.isEmpty() && currentUsername.equals(usernames.get(0))) {
+                    throw new ResponseStatusException(BAD_REQUEST, "不能禁用当前登录的账号");
+                }
+            }
+        }
         ensureChanged(jdbcTemplate.update("UPDATE user SET status=?,update_time=NOW() WHERE id=? AND deleted=0", normalizeStatus(status), id), "用户不存在");
     }
 
