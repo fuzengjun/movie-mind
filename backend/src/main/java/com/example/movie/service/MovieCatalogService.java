@@ -1,20 +1,114 @@
 package com.example.movie.service;
-import com.example.movie.common.PageResult;import lombok.RequiredArgsConstructor;import org.springframework.jdbc.core.JdbcTemplate;import org.springframework.stereotype.Service;import org.springframework.util.StringUtils;import java.util.*;
-@Service @RequiredArgsConstructor public class MovieCatalogService{
- private final JdbcTemplate db;
- public PageResult<Map<String,Object>> page(String keyword,List<String> categories,List<String> excludeCategories,List<String> regions,List<String> excludeRegions,List<Integer> years,List<Integer> excludeYears,String sort,long pageNum,long pageSize){
-  long p=Math.max(1,pageNum),s=Math.min(50,Math.max(1,pageSize)),offset=(p-1)*s;List<Object>a=new ArrayList<>();StringBuilder where=new StringBuilder(" WHERE m.deleted=0 AND m.status=1");
-  if(StringUtils.hasText(keyword)){where.append(" AND (m.title LIKE ? OR m.original_title LIKE ?)");String q="%"+keyword.trim()+"%";a.add(q);a.add(q);}
-  if(categories!=null&&!categories.isEmpty()){List<String> requiredCategories=categories.stream().filter(StringUtils::hasText).map(String::trim).distinct().toList();if(!requiredCategories.isEmpty()){where.append(" AND (SELECT COUNT(DISTINCT c.name) FROM movie_category x JOIN category c ON c.id=x.category_id AND c.deleted=0 AND c.status=1 WHERE x.movie_id=m.id AND c.name IN (");appendPlaceholders(where,requiredCategories.size());where.append(")) = ?");a.addAll(requiredCategories);a.add(requiredCategories.size());}}
-  if(excludeCategories!=null&&!excludeCategories.isEmpty()){where.append(" AND NOT EXISTS(SELECT 1 FROM movie_category x JOIN category c ON c.id=x.category_id AND c.deleted=0 AND c.status=1 WHERE x.movie_id=m.id AND c.name IN (");appendPlaceholders(where,excludeCategories.size());where.append("))");a.addAll(excludeCategories);}
-  if(regions!=null&&!regions.isEmpty()){where.append(" AND m.region IN (");appendPlaceholders(where,regions.size());where.append(")");a.addAll(regions);}
-  if(excludeRegions!=null&&!excludeRegions.isEmpty()){where.append(" AND m.region NOT IN (");appendPlaceholders(where,excludeRegions.size());where.append(")");a.addAll(excludeRegions);}
-  if(years!=null&&!years.isEmpty()){where.append(" AND YEAR(m.release_date) IN (");appendPlaceholders(where,years.size());where.append(")");a.addAll(years);}
-  if(excludeYears!=null&&!excludeYears.isEmpty()){where.append(" AND YEAR(m.release_date) NOT IN (");appendPlaceholders(where,excludeYears.size());where.append(")");a.addAll(excludeYears);}
-  Long total=db.queryForObject("SELECT COUNT(*) FROM movie m"+where,Long.class,a.toArray());String order=switch(sort==null?"":sort){case"rating-asc"->"m.average_rating ASC,m.id DESC";case"rating-desc"->"m.average_rating DESC,m.id DESC";case"favorite-desc"->"m.favorite_count DESC,m.id DESC";case"release-asc"->"m.release_date ASC,m.id DESC";case"release-desc"->"m.release_date DESC,m.id DESC";default->"m.view_count DESC,m.favorite_count DESC,m.id DESC";};
-  List<Object>q=new ArrayList<>(a);q.add(s);q.add(offset);String sql="SELECT m.id,m.title,m.original_title originalTitle,m.overview,m.poster_url posterUrl,m.backdrop_url backdropUrl,m.region,m.release_date releaseDate,m.runtime,m.average_rating averageRating,m.favorite_count favoriteCount,m.view_count viewCount,GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ',') categoryText FROM movie m LEFT JOIN movie_category mc ON mc.movie_id=m.id LEFT JOIN category c ON c.id=mc.category_id AND c.deleted=0"+where+" GROUP BY m.id ORDER BY "+order+" LIMIT ? OFFSET ?";
-  List<Map<String,Object>>rows=db.query(sql,(rs,n)->{Map<String,Object>r=new LinkedHashMap<>();r.put("id",rs.getLong("id"));r.put("title",rs.getString("title"));r.put("originalTitle",rs.getString("originalTitle"));r.put("overview",rs.getString("overview"));r.put("posterUrl",rs.getString("posterUrl"));r.put("backdropUrl",rs.getString("backdropUrl"));r.put("region",rs.getString("region"));r.put("releaseDate",rs.getDate("releaseDate")==null?null:rs.getDate("releaseDate").toLocalDate());r.put("runtime",rs.getObject("runtime"));r.put("averageRating",rs.getBigDecimal("averageRating"));r.put("favoriteCount",rs.getObject("favoriteCount"));r.put("viewCount",rs.getObject("viewCount"));String cs=rs.getString("categoryText");r.put("categories",cs==null||cs.isBlank()?List.of():List.of(cs.split(",")));return r;},q.toArray());return new PageResult<>(total,p,s,rows);
- }
- private void appendPlaceholders(StringBuilder sb,int count){for(int i=0;i<count;i++){if(i>0)sb.append(",");sb.append("?");}}
- public Map<String,Object> filters(){Map<String,Object>r=new LinkedHashMap<>();r.put("categories",db.queryForList("SELECT DISTINCT c.name FROM category c JOIN movie_category mc ON mc.category_id=c.id JOIN movie m ON m.id=mc.movie_id WHERE c.deleted=0 AND c.status=1 AND m.deleted=0 AND m.status=1 ORDER BY c.name",String.class));r.put("regions",db.queryForList("SELECT DISTINCT region FROM movie WHERE deleted=0 AND status=1 AND region IS NOT NULL AND region<>'' ORDER BY region",String.class));r.put("years",db.queryForList("SELECT DISTINCT YEAR(release_date) y FROM movie WHERE deleted=0 AND status=1 AND release_date IS NOT NULL ORDER BY y DESC",Integer.class));return r;}
+
+import com.example.movie.common.PageResult;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import java.util.*;
+
+@Service
+@RequiredArgsConstructor
+public class MovieCatalogService {
+    private final JdbcTemplate db;
+
+    public PageResult<Map<String, Object>> page(String keyword, List<String> categories, List<String> excludeCategories, List<String> regions, List<String> excludeRegions, List<Integer> years, List<Integer> excludeYears, String sort, long pageNum, long pageSize) {
+        long p = Math.max(1, pageNum), s = Math.min(50, Math.max(1, pageSize)), offset = (p - 1) * s;
+        List<Object> a = new ArrayList<>();
+        StringBuilder where = new StringBuilder(" WHERE m.deleted=0 AND m.status=1");
+        if (StringUtils.hasText(keyword)) {
+            where.append(" AND (m.title LIKE ? OR m.original_title LIKE ?)");
+            String q = "%" + keyword.trim() + "%";
+            a.add(q);
+            a.add(q);
+        }
+        if (categories != null && !categories.isEmpty()) {
+            List<String> requiredCategories = categories.stream().filter(StringUtils::hasText).map(String::trim).distinct().toList();
+            if (!requiredCategories.isEmpty()) {
+                where.append(" AND (SELECT COUNT(DISTINCT c.name) FROM movie_category x JOIN category c ON c.id=x.category_id AND c.deleted=0 AND c.status=1 WHERE x.movie_id=m.id AND c.name IN (");
+                appendPlaceholders(where, requiredCategories.size());
+                where.append(")) = ?");
+                a.addAll(requiredCategories);
+                a.add(requiredCategories.size());
+            }
+        }
+        if (excludeCategories != null && !excludeCategories.isEmpty()) {
+            where.append(" AND NOT EXISTS(SELECT 1 FROM movie_category x JOIN category c ON c.id=x.category_id AND c.deleted=0 AND c.status=1 WHERE x.movie_id=m.id AND c.name IN (");
+            appendPlaceholders(where, excludeCategories.size());
+            where.append("))");
+            a.addAll(excludeCategories);
+        }
+        if (regions != null && !regions.isEmpty()) {
+            where.append(" AND m.region IN (");
+            appendPlaceholders(where, regions.size());
+            where.append(")");
+            a.addAll(regions);
+        }
+        if (excludeRegions != null && !excludeRegions.isEmpty()) {
+            where.append(" AND m.region NOT IN (");
+            appendPlaceholders(where, excludeRegions.size());
+            where.append(")");
+            a.addAll(excludeRegions);
+        }
+        if (years != null && !years.isEmpty()) {
+            where.append(" AND YEAR(m.release_date) IN (");
+            appendPlaceholders(where, years.size());
+            where.append(")");
+            a.addAll(years);
+        }
+        if (excludeYears != null && !excludeYears.isEmpty()) {
+            where.append(" AND YEAR(m.release_date) NOT IN (");
+            appendPlaceholders(where, excludeYears.size());
+            where.append(")");
+            a.addAll(excludeYears);
+        }
+        Long total = db.queryForObject("SELECT COUNT(*) FROM movie m" + where, Long.class, a.toArray());
+        String order = switch (sort == null ? "" : sort) {
+            case "rating-asc" -> "m.average_rating ASC,m.id DESC";
+            case "rating-desc" -> "m.average_rating DESC,m.id DESC";
+            case "favorite-desc" -> "m.favorite_count DESC,m.id DESC";
+            case "release-asc" -> "m.release_date ASC,m.id DESC";
+            case "release-desc" -> "m.release_date DESC,m.id DESC";
+            default -> "m.view_count DESC,m.favorite_count DESC,m.id DESC";
+        };
+        List<Object> q = new ArrayList<>(a);
+        q.add(s);
+        q.add(offset);
+        String sql = "SELECT m.id,m.title,m.original_title originalTitle,m.overview,m.poster_url posterUrl,m.backdrop_url backdropUrl,m.region,m.release_date releaseDate,m.runtime,m.average_rating averageRating,m.favorite_count favoriteCount,m.view_count viewCount,GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ',') categoryText FROM movie m LEFT JOIN movie_category mc ON mc.movie_id=m.id LEFT JOIN category c ON c.id=mc.category_id AND c.deleted=0" + where + " GROUP BY m.id ORDER BY " + order + " LIMIT ? OFFSET ?";
+        List<Map<String, Object>> rows = db.query(sql, (rs, n) -> {
+            Map<String, Object> r = new LinkedHashMap<>();
+            r.put("id", rs.getLong("id"));
+            r.put("title", rs.getString("title"));
+            r.put("originalTitle", rs.getString("originalTitle"));
+            r.put("overview", rs.getString("overview"));
+            r.put("posterUrl", rs.getString("posterUrl"));
+            r.put("backdropUrl", rs.getString("backdropUrl"));
+            r.put("region", rs.getString("region"));
+            r.put("releaseDate", rs.getDate("releaseDate") == null ? null : rs.getDate("releaseDate").toLocalDate());
+            r.put("runtime", rs.getObject("runtime"));
+            r.put("averageRating", rs.getBigDecimal("averageRating"));
+            r.put("favoriteCount", rs.getObject("favoriteCount"));
+            r.put("viewCount", rs.getObject("viewCount"));
+            String cs = rs.getString("categoryText");
+            r.put("categories", cs == null || cs.isBlank() ? List.of() : List.of(cs.split(",")));
+            return r;
+        }, q.toArray());
+        return new PageResult<>(total, p, s, rows);
+    }
+
+    private void appendPlaceholders(StringBuilder sb, int count) {
+        for (int i = 0; i < count; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("?");
+        }
+    }
+
+    public Map<String, Object> filters() {
+        Map<String, Object> r = new LinkedHashMap<>();
+        r.put("categories", db.queryForList("SELECT DISTINCT c.name FROM category c JOIN movie_category mc ON mc.category_id=c.id JOIN movie m ON m.id=mc.movie_id WHERE c.deleted=0 AND c.status=1 AND m.deleted=0 AND m.status=1 ORDER BY c.name", String.class));
+        r.put("regions", db.queryForList("SELECT DISTINCT region FROM movie WHERE deleted=0 AND status=1 AND region IS NOT NULL AND region<>'' ORDER BY region", String.class));
+        r.put("years", db.queryForList("SELECT DISTINCT YEAR(release_date) y FROM movie WHERE deleted=0 AND status=1 AND release_date IS NOT NULL ORDER BY y DESC", Integer.class));
+        return r;
+    }
 }

@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
+
 import java.time.Duration;
 
 import java.util.LinkedHashMap;
@@ -21,7 +22,8 @@ public class SimilarMovieService {
         if (!Boolean.TRUE.equals(exists)) throw new IllegalArgumentException("影片不存在或已下架");
         int safeLimit = Math.min(20, Math.max(1, limit));
         String cacheKey = "movie:similar:" + movieId + ":" + safeLimit;
-        List<Map<String, Object>> cached = cache.read(cacheKey, new TypeReference<>() {});
+        List<Map<String, Object>> cached = cache.read(cacheKey, new TypeReference<>() {
+        });
         if (cached != null) return cached;
         String sql = """
                 SELECT m.id, m.title, m.poster_url posterUrl, m.release_date releaseDate,
@@ -39,9 +41,13 @@ public class SimilarMovieService {
                 """;
         List<Map<String, Object>> result = db.query(sql, (rs, rowNum) -> {
             Map<String, Object> row = new LinkedHashMap<>();
-            row.put("id", rs.getLong("id")); row.put("title", rs.getString("title")); row.put("posterUrl", rs.getString("posterUrl"));
+            row.put("id", rs.getLong("id"));
+            row.put("title", rs.getString("title"));
+            row.put("posterUrl", rs.getString("posterUrl"));
             row.put("releaseDate", rs.getDate("releaseDate") == null ? null : rs.getDate("releaseDate").toLocalDate());
-            row.put("averageRating", rs.getBigDecimal("averageRating")); row.put("favoriteCount", rs.getInt("favoriteCount")); row.put("viewCount", rs.getInt("viewCount"));
+            row.put("averageRating", rs.getBigDecimal("averageRating"));
+            row.put("favoriteCount", rs.getInt("favoriteCount"));
+            row.put("viewCount", rs.getInt("viewCount"));
             row.put("reason", reason(rs.getInt("categoryMatches"), rs.getInt("tagMatches"), rs.getInt("directorMatches"), rs.getInt("actorMatches")));
             return row;
         }, movieId, movieId, movieId, movieId, movieId, safeLimit);

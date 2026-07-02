@@ -1,2 +1,110 @@
-<template><AdminPage title="用户管理" kicker="Audience Ops" hint="查询账户、查看互动档案，并管理账号可用状态。"><template #actions><el-input v-model="query.keyword" clearable placeholder="用户名 / 昵称 / 邮箱" @keyup.enter="search"/><el-select v-model="query.status" clearable placeholder="全部状态"><el-option label="正常" :value="1"/><el-option label="禁用" :value="0"/></el-select><button class="pill-button is-active" @click="search">查询</button></template><div class="surface-card table-shell overflow-hidden p-4"><el-table :data="records" v-loading="loading"><el-table-column label="用户" min-width="210"><template #default="{row}"><div class="admin-user-cell"><el-avatar :src="row.avatar">{{row.nickname?.[0]}}</el-avatar><div><b>{{row.nickname}}</b><p>@{{row.username}}</p></div></div></template></el-table-column><el-table-column prop="email" label="邮箱" min-width="190"/><el-table-column label="互动" min-width="180"><template #default="{row}"><span class="detail-chip">藏 {{row.favoriteCount}} · 评 {{row.commentCount}} · 分 {{row.ratingCount}}</span></template></el-table-column><el-table-column prop="role" label="角色" width="100"/><el-table-column label="状态" width="90"><template #default="{row}"><el-tag :type="row.status===1?'success':'info'">{{row.status===1?'正常':'禁用'}}</el-tag></template></el-table-column><el-table-column label="操作" width="210"><template #default="{row}"><el-button link type="primary" @click="showDetail(row)">详情</el-button><el-button link :type="row.status===1?'danger':'success'" @click="toggle(row)">{{row.status===1?'禁用':'启用'}}</el-button><el-button link type="warning" @click="reset(row)">重置密码</el-button></template></el-table-column></el-table><AdminPagination v-model:page="query.pageNum" :total="total" @change="load"/></div><el-drawer v-model="drawer" title="用户互动档案" size="520px"><div v-if="detail" class="space-y-5"><div class="surface-card-soft p-4"><h3>{{detail.nickname}} <small>@{{detail.username}}</small></h3><p>{{detail.email||'未填写邮箱'}}</p></div><section><h4>最近收藏</h4><div v-for="item in detail.favorites" :key="item.id" class="admin-record-row"><span>{{item.title}}</span><small>{{format(item.createTime)}}</small></div><el-empty v-if="!detail.favorites?.length" description="暂无收藏"/></section><section><h4>最近评分</h4><div v-for="item in detail.ratings" :key="item.id" class="admin-record-row"><span>{{item.title}}</span><b>{{item.score}} 分</b></div><el-empty v-if="!detail.ratings?.length" description="暂无评分"/></section></div></el-drawer></AdminPage></template>
-<script setup>import{onMounted,reactive,ref}from'vue';import{ElMessage,ElMessageBox}from'element-plus';import{pageAdminUsers,getAdminUser,setUserStatus,resetUserPassword}from'@/api/adminManagement';import AdminPage from'@/components/admin/AdminPage.vue';import AdminPagination from'@/components/admin/AdminPagination.vue';const records=ref([]),total=ref(0),loading=ref(false),drawer=ref(false),detail=ref(null),query=reactive({keyword:'',status:null,pageNum:1,pageSize:10});async function load(){loading.value=true;try{const r=await pageAdminUsers(query);records.value=r.data.records;total.value=r.data.total}finally{loading.value=false}}function search(){query.pageNum=1;load()}async function toggle(row){await setUserStatus(row.id,row.status===1?0:1);ElMessage.success('用户状态已更新');load()}async function reset(row){const{value}=await ElMessageBox.prompt(`为 ${row.nickname} 设置新密码`,'重置密码',{inputType:'password',inputPattern:/.{6,}/,inputErrorMessage:'密码至少 6 位'});await resetUserPassword(row.id,value);ElMessage.success('密码已重置')}async function showDetail(row){detail.value=(await getAdminUser(row.id)).data;drawer.value=true}const format=v=>v?String(v).replace('T',' ').slice(0,16):'';onMounted(load)</script>
+<template>
+  <AdminPage title="用户管理" kicker="Audience Ops" hint="查询账户、查看互动档案，并管理账号可用状态。">
+    <template #actions>
+      <el-input v-model="query.keyword" clearable placeholder="用户名 / 昵称 / 邮箱" @keyup.enter="search"/>
+      <el-select v-model="query.status" clearable placeholder="全部状态">
+        <el-option label="正常" :value="1"/>
+        <el-option label="禁用" :value="0"/>
+      </el-select>
+      <button class="pill-button is-active" @click="search">查询</button>
+    </template>
+    <div class="surface-card table-shell overflow-hidden p-4">
+      <el-table :data="records" v-loading="loading">
+        <el-table-column label="用户" min-width="210">
+          <template #default="{row}">
+            <div class="admin-user-cell">
+              <el-avatar :src="row.avatar">{{ row.nickname?.[0] }}</el-avatar>
+              <div><b>{{ row.nickname }}</b>
+                <p>@{{ row.username }}</p></div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="email" label="邮箱" min-width="190"/>
+        <el-table-column label="互动" min-width="180">
+          <template #default="{row}"><span class="detail-chip">藏 {{ row.favoriteCount }} · 评 {{ row.commentCount }} · 分 {{ row.ratingCount }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="role" label="角色" width="100"/>
+        <el-table-column label="状态" width="90">
+          <template #default="{row}">
+            <el-tag :type="row.status===1?'success':'info'">{{ row.status === 1 ? '正常' : '禁用' }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="210">
+          <template #default="{row}">
+            <el-button link type="primary" @click="showDetail(row)">详情</el-button>
+            <el-button link :type="row.status===1?'danger':'success'" @click="toggle(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button link type="warning" @click="reset(row)">重置密码</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <AdminPagination v-model:page="query.pageNum" :total="total" @change="load"/>
+    </div>
+    <el-drawer v-model="drawer" title="用户互动档案" size="520px">
+      <div v-if="detail" class="space-y-5">
+        <div class="surface-card-soft p-4"><h3>{{ detail.nickname }} <small>@{{ detail.username }}</small></h3>
+          <p>{{ detail.email || '未填写邮箱' }}</p></div>
+        <section><h4>最近收藏</h4>
+          <div v-for="item in detail.favorites" :key="item.id" class="admin-record-row">
+            <span>{{ item.title }}</span><small>{{ format(item.createTime) }}</small></div>
+          <el-empty v-if="!detail.favorites?.length" description="暂无收藏"/>
+        </section>
+        <section><h4>最近评分</h4>
+          <div v-for="item in detail.ratings" :key="item.id" class="admin-record-row">
+            <span>{{ item.title }}</span><b>{{ item.score }} 分</b></div>
+          <el-empty v-if="!detail.ratings?.length" description="暂无评分"/>
+        </section>
+      </div>
+    </el-drawer>
+  </AdminPage>
+</template>
+<script setup>import {onMounted, reactive, ref} from 'vue';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {pageAdminUsers, getAdminUser, setUserStatus, resetUserPassword} from '@/api/adminManagement';
+import AdminPage from '@/components/admin/AdminPage.vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
+
+const records = ref([]), total = ref(0), loading = ref(false), drawer = ref(false), detail = ref(null),
+    query = reactive({keyword: '', status: null, pageNum: 1, pageSize: 10});
+
+async function load() {
+  loading.value = true;
+  try {
+    const r = await pageAdminUsers(query);
+    records.value = r.data.records;
+    total.value = r.data.total
+  } finally {
+    loading.value = false
+  }
+}
+
+function search() {
+  query.pageNum = 1;
+  load()
+}
+
+async function toggle(row) {
+  await setUserStatus(row.id, row.status === 1 ? 0 : 1);
+  ElMessage.success('用户状态已更新');
+  load()
+}
+
+async function reset(row) {
+  const {value} = await ElMessageBox.prompt(`为 ${row.nickname} 设置新密码`, '重置密码', {
+    inputType: 'password',
+    inputPattern: /.{6,}/,
+    inputErrorMessage: '密码至少 6 位'
+  });
+  await resetUserPassword(row.id, value);
+  ElMessage.success('密码已重置')
+}
+
+async function showDetail(row) {
+  detail.value = (await getAdminUser(row.id)).data;
+  drawer.value = true
+}
+
+const format = v => v ? String(v).replace('T', ' ').slice(0, 16) : '';
+onMounted(load)</script>

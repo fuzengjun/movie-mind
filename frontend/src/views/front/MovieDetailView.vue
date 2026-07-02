@@ -3,19 +3,20 @@
     <!-- 详情巨幕背景 -->
     <div class="cinema-hero" :style="heroStyle">
       <div class="absolute inset-0 z-0 bg-black/15"></div>
-      
+
       <!-- pt-28 为 fixed 导航栏预留高度，保证文字内容在顶部固定导航下依然完美展示 -->
-      <div class="hero-content relative z-10 flex min-h-[580px] flex-col justify-end p-6 md:p-12 lg:p-16 pt-28 text-white">
+      <div
+          class="hero-content relative z-10 flex min-h-[580px] flex-col justify-end p-6 md:p-12 lg:p-16 pt-28 text-white">
         <!-- 小分类标签 -->
         <p class="section-kicker text-[10px] font-bold tracking-[0.25em] text-white/70 uppercase border-none">
           Feature Detail
         </p>
-        
+
         <!-- 电影大标题 -->
         <h1 class="mt-3 max-w-3xl text-3xl font-extrabold tracking-tight text-white md:text-5xl lg:text-6xl leading-[1.1]">
           {{ movie.title }}
         </h1>
-        
+
         <!-- 底部弹性分栏排版 -->
         <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-8 mt-4 w-full">
           <!-- 左侧：简介与元数据 -->
@@ -23,7 +24,7 @@
             <p class="text-sm md:text-base leading-relaxed text-white/80 line-clamp-2 select-none">
               {{ movie.overview || '暂无影片简介。' }}
             </p>
-            
+
             <div class="movie-meta-line">
               <span v-if="movie.releaseDate">{{ String(movie.releaseDate).slice(0, 4) }}</span>
               <span v-if="movie.releaseDate && movie.runtime" class="meta-separator">·</span>
@@ -38,8 +39,11 @@
               <span class="movie-provider-region">{{ watchProviderRegionText }}</span>
               <div class="provider-rail-shell">
                 <div ref="providerRailRef" class="movie-provider-list" @scroll.passive="updateProviderControls">
-                  <div v-for="provider in movie.watchProviders" :key="provider.providerId" class="movie-provider-chip" @mouseenter="handleProviderMouseEnter" @mouseleave="handleProviderMouseLeave" @animationiteration="handleProviderAnimationIteration">
-                    <img v-if="provider.logoUrl" :src="provider.logoUrl" :alt="provider.name" class="movie-provider-logo" />
+                  <div v-for="provider in movie.watchProviders" :key="provider.providerId" class="movie-provider-chip"
+                       @mouseenter="handleProviderMouseEnter" @mouseleave="handleProviderMouseLeave"
+                       @animationiteration="handleProviderAnimationIteration">
+                    <img v-if="provider.logoUrl" :src="provider.logoUrl" :alt="provider.name"
+                         class="movie-provider-logo"/>
                     <span class="movie-provider-name">
                       <span class="movie-provider-name-inner">
                         <span class="marquee-text">{{ provider.name }}</span>
@@ -51,10 +55,12 @@
                     <span class="movie-provider-type">{{ accessTypeText(provider.accessType) }}</span>
                   </div>
                 </div>
-                <button v-if="canScrollLeft" class="provider-rail-control provider-rail-control-left" type="button" aria-label="向左滚动播放渠道" @click="scrollProviderRail(-1)">
+                <button v-if="canScrollLeft" class="provider-rail-control provider-rail-control-left" type="button"
+                        aria-label="向左滚动播放渠道" @click="scrollProviderRail(-1)">
                   <span>‹</span>
                 </button>
-                <button v-if="canScrollRight" class="provider-rail-control provider-rail-control-right" type="button" aria-label="向右滚动播放渠道" @click="scrollProviderRail(1)">
+                <button v-if="canScrollRight" class="provider-rail-control provider-rail-control-right" type="button"
+                        aria-label="向右滚动播放渠道" @click="scrollProviderRail(1)">
                   <span>›</span>
                 </button>
               </div>
@@ -62,14 +68,15 @@
           </div>
 
           <!-- 右侧：主演列表 (Starring) -->
-          <div v-if="actorsString" class="hidden md:block text-right text-xs text-white/60 font-medium max-w-[280px] leading-normal select-none pb-1">
+          <div v-if="actorsString"
+               class="hidden md:block text-right text-xs text-white/60 font-medium max-w-[280px] leading-normal select-none pb-1">
             Starring <span class="text-white/90 font-semibold">{{ actorsString }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="actions" />
+    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="actions"/>
 
     <!-- 中部：关于 (About) 双列磨砂玻璃面板 -->
     <div class="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
@@ -189,19 +196,19 @@
       </div>
     </div>
     <!-- 演职人员 -->
-    <CastRail 
-      v-if="castAndCrew && castAndCrew.length" 
-      :movieId="movie.id"
-      :cast="castAndCrew" 
+    <CastRail
+        v-if="castAndCrew && castAndCrew.length"
+        :movieId="movie.id"
+        :cast="castAndCrew"
     />
 
     <!-- 关联推荐 -->
     <ContentRail v-if="relatedMovies.length"
-      title="相似影片"
-      eyebrow="More Like This"
-      description="综合影片类型、主题标签、导演与演出阵容，为你找到气质相近的作品。"
-      :movies="relatedMovies"
-      show-reasons
+                 title="相似影片"
+                 eyebrow="More Like This"
+                 description="综合影片类型、主题标签、导演与演出阵容，为你找到气质相近的作品。"
+                 :movies="relatedMovies"
+                 show-reasons
     />
     <div v-else class="surface-card related-empty-state">
       <p class="section-kicker">More Like This</p>
@@ -210,23 +217,31 @@
     </div>
 
     <!-- 用户影评与讨论区 -->
-    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="comments" />
+    <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="comments"/>
   </section>
 
   <div v-else-if="loading" class="detail-page-state">
-    <div class="surface-card detail-state-card"><div class="state-orbit"></div><p>正在加载影片资料...</p></div>
+    <div class="surface-card detail-state-card">
+      <div class="state-orbit"></div>
+      <p>正在加载影片资料...</p></div>
   </div>
   <div v-else class="detail-page-state">
     <div class="surface-card detail-state-card is-error">
-      <p class="section-kicker">Unable to load</p><h1>影片详情无法加载</h1><p>{{ errorMessage }}</p>
-      <div class="flex gap-3"><button class="pill-button is-active" @click="loadMovie">重新加载</button><RouterLink class="pill-button no-underline" to="/movies">返回影视库</RouterLink></div>
+      <p class="section-kicker">Unable to load</p>
+      <h1>影片详情无法加载</h1>
+      <p>{{ errorMessage }}</p>
+      <div class="flex gap-3">
+        <button class="pill-button is-active" @click="loadMovie">重新加载</button>
+        <RouterLink class="pill-button no-underline" to="/movies">返回影视库</RouterLink>
+      </div>
     </div>
-  </div></template>
+  </div>
+</template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { getMovieDetail, getSimilarMovies } from '@/api/movie'
+import {computed, nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
+import {useRoute} from 'vue-router'
+import {getMovieDetail, getSimilarMovies} from '@/api/movie'
 import ContentRail from '@/components/ContentRail.vue'
 import CastRail from '@/components/CastRail.vue'
 import MovieActions from '@/components/MovieActions.vue'
@@ -254,7 +269,7 @@ function updateProviderControls() {
 function scrollProviderRail(direction) {
   const rail = providerRailRef.value
   if (!rail) return
-  rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth' })
+  rail.scrollBy({left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth'})
 }
 
 async function resetProviderRailPosition() {
@@ -262,7 +277,7 @@ async function resetProviderRailPosition() {
   await nextTick()
   const rail = providerRailRef.value
   if (!rail) return
-  rail.scrollTo({ left: 0, behavior: 'auto' })
+  rail.scrollTo({left: 0, behavior: 'auto'})
   requestAnimationFrame(() => requestAnimationFrame(updateProviderControls))
 }
 
@@ -297,15 +312,15 @@ function handleProviderMouseEnter(event) {
   const chip = event.currentTarget
   const nameEl = chip.querySelector('.movie-provider-name')
   const singleTextEl = chip.querySelector('.marquee-text')
-  
+
   if (!nameEl || !singleTextEl) return
-  
+
   chip.dataset.shouldStop = 'false'
   if (chip._marqueeTimeoutId) {
     clearTimeout(chip._marqueeTimeoutId)
     chip._marqueeTimeoutId = null
   }
-  
+
   const isOverflow = singleTextEl.offsetWidth > nameEl.clientWidth
   if (isOverflow) {
     freezeProviderChipSize(chip, nameEl)
@@ -323,7 +338,7 @@ function handleProviderMouseLeave(event) {
     clearTimeout(chip._marqueeTimeoutId)
     chip._marqueeTimeoutId = null
   }
-  
+
   if (chip.classList.contains('is-animating')) {
     chip.dataset.shouldStop = 'true'
   } else {
@@ -341,14 +356,15 @@ function handleProviderAnimationIteration(event) {
     releaseProviderChipSize(chip)
   }
 }
+
 const relatedSource = ref([])
 const personalizedRelated = ref(false)
 
 const heroStyle = computed(() => {
   const image = movie.value?.backdropUrl || movie.value?.posterUrl
   return image
-    ? { backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.15) 100%), url(${image})` }
-    : {}
+      ? {backgroundImage: `linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.15) 100%), url(${image})`}
+      : {}
 })
 
 // Starring 主演名单拼接字符串（提取前 3 位演员）
@@ -399,7 +415,7 @@ const releaseStatusText = computed(() => {
 })
 
 const watchProviderRegionText = computed(() => {
-  const regionMap = { CN: '中国大陆可观看', US: '美国地区可观看' }
+  const regionMap = {CN: '中国大陆可观看', US: '美国地区可观看'}
   return regionMap[movie.value?.watchProviderRegion] || `${movie.value?.watchProviderRegion || ''} 地区可观看`
 })
 
@@ -431,7 +447,7 @@ function localizeLanguage(language) {
   const value = String(language).trim()
   if (!/^[a-z]{2,3}(?:-[A-Z]{2})?$/i.test(value)) return value
   try {
-    return new Intl.DisplayNames(['zh-CN'], { type: 'language' }).of(value) || value
+    return new Intl.DisplayNames(['zh-CN'], {type: 'language'}).of(value) || value
   } catch {
     return value
   }
@@ -520,13 +536,14 @@ const castAndCrew = computed(() => {
 async function loadSimilarMovies() {
   relatedError.value = ''
   try {
-    const response = await getSimilarMovies(route.params.id, { limit: 8 })
+    const response = await getSimilarMovies(route.params.id, {limit: 8})
     relatedSource.value = response.data || []
   } catch (error) {
     relatedSource.value = []
     relatedError.value = error.message || '请稍后重试。'
   }
 }
+
 async function loadMovie() {
   loading.value = true
   errorMessage.value = ''
@@ -545,10 +562,10 @@ async function loadMovie() {
 }
 
 watch(
-  () => route.params.id,
-  () => {
-    loadMovie()
-  }
+    () => route.params.id,
+    () => {
+      loadMovie()
+    }
 )
 
 watch(() => movie.value?.watchProviders, () => {
@@ -620,6 +637,7 @@ onBeforeUnmount(() => {
   padding-bottom: 2px;
   scrollbar-width: none; /* 隐藏 Firefox 默认滚动条 */
 }
+
 .movie-provider-list::-webkit-scrollbar {
   display: none; /* 隐藏 Chrome/Safari 默认滚动条 */
 }
@@ -670,6 +688,7 @@ onBeforeUnmount(() => {
 .provider-rail-control-left {
   left: -12px;
 }
+
 .provider-rail-control-right {
   right: -12px;
 }
@@ -861,5 +880,58 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
     gap: 28px;
   }
-}.related-empty-state{display:grid;gap:8px;padding:30px}.related-empty-state h2,.related-empty-state p{margin:0}.related-empty-state p{color:var(--text-secondary)}.detail-page-state{display:grid;min-height:70vh;padding-top:110px;place-items:center}.detail-state-card{display:grid;min-width:min(520px,92vw);justify-items:center;gap:14px;padding:44px;text-align:center}.detail-state-card h1,.detail-state-card p{margin:0}.detail-state-card>p{color:var(--text-secondary)}.state-orbit{width:34px;height:34px;border:2px solid var(--border-soft);border-top-color:var(--accent-primary);border-radius:50%;animation:state-spin .8s linear infinite}@keyframes state-spin{to{transform:rotate(360deg)}}
+}
+
+.related-empty-state {
+  display: grid;
+  gap: 8px;
+  padding: 30px
+}
+
+.related-empty-state h2, .related-empty-state p {
+  margin: 0
+}
+
+.related-empty-state p {
+  color: var(--text-secondary)
+}
+
+.detail-page-state {
+  display: grid;
+  min-height: 70vh;
+  padding-top: 110px;
+  place-items: center
+}
+
+.detail-state-card {
+  display: grid;
+  min-width: min(520px, 92vw);
+  justify-items: center;
+  gap: 14px;
+  padding: 44px;
+  text-align: center
+}
+
+.detail-state-card h1, .detail-state-card p {
+  margin: 0
+}
+
+.detail-state-card > p {
+  color: var(--text-secondary)
+}
+
+.state-orbit {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--border-soft);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: state-spin .8s linear infinite
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg)
+  }
+}
 </style>

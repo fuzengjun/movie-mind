@@ -357,5 +357,6 @@ public class PersonServiceImpl implements PersonService {
         private LocalDateTime profileSyncTime;
     }
 
-    private record CachedPersonDetail(PersonDetailVO detail, long expiresAt) {}
+    private record CachedPersonDetail(PersonDetailVO detail, long expiresAt) {
+    }
 }

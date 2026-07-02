@@ -69,9 +69,9 @@ public class RecommendationServiceImpl implements RecommendationService {
     }
 
     private List<RecommendationVO> collaborativeFilter(Long userId,
-                                                         Map<Long, Map<Long, Double>> matrix,
-                                                         Set<Long> touchedMovieIds,
-                                                         int limit) {
+                                                       Map<Long, Map<Long, Double>> matrix,
+                                                       Set<Long> touchedMovieIds,
+                                                       int limit) {
         Map<Long, Double> target = matrix.get(userId);
         double targetNorm = norm(target);
         if (targetNorm == 0) return List.of();
@@ -254,7 +254,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         if (!redisEnabled) return null;
         try {
             String value = redisTemplate.opsForValue().get(cacheKey(userId, limit));
-            return value == null ? null : objectMapper.readValue(value, new TypeReference<>() {});
+            return value == null ? null : objectMapper.readValue(value, new TypeReference<>() {
+            });
         } catch (Exception ignored) {
             return null;
         }
@@ -277,8 +278,11 @@ public class RecommendationServiceImpl implements RecommendationService {
         return Math.round(value * 10_000d) / 10_000d;
     }
 
-    private record Neighbor(Long userId, double similarity) {}
-    private record ScoredMovie(Long movieId, double score, String reason, String algorithm) {}
+    private record Neighbor(Long userId, double similarity) {
+    }
+
+    private record ScoredMovie(Long movieId, double score, String reason, String algorithm) {
+    }
 
     private static class Candidate {
         private double weightedScore;

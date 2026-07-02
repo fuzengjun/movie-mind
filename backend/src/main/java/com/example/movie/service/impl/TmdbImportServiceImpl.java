@@ -81,7 +81,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         result.setSkipped(skipped);
         result.setSource("TMDB popular movies");
         result.setErrors(errors);
-        
+
         if (imported > 0) {
             adminStatisticsService.clearDashboardCache();
             movieCacheService.evictMovieCaches();
@@ -222,8 +222,9 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         }
         return result;
     }
+
     @Override
-    public List<Map<String,Object>> searchMovies(String query, Integer page) {
+    public List<Map<String, Object>> searchMovies(String query, Integer page) {
         ensureConfigured();
         if (!StringUtils.hasText(query)) throw new IllegalArgumentException("请输入影片名称");
         int safePage = Math.max(1, page == null ? 1 : page);
@@ -231,13 +232,20 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                 + "&query=" + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8));
         Set<Long> existing = new LinkedHashSet<>(jdbcTemplate.queryForList(
                 "SELECT tmdb_id FROM movie WHERE tmdb_id IS NOT NULL AND deleted=0", Long.class));
-        List<Map<String,Object>> result = new ArrayList<>();
+        List<Map<String, Object>> result = new ArrayList<>();
         for (JsonNode item : payload.path("results")) {
-            long id=item.path("id").asLong();if(id<=0)continue;
-            Map<String,Object> row=new LinkedHashMap<>();row.put("tmdbId",id);row.put("title",item.path("title").asText(""));
-            row.put("originalTitle",item.path("original_title").asText(""));row.put("overview",item.path("overview").asText(""));
-            row.put("releaseDate",item.path("release_date").asText(""));row.put("rating",item.path("vote_average").asDouble(0));
-            row.put("posterUrl",imageUrl(item.path("poster_path").asText(null)));row.put("imported",existing.contains(id));result.add(row);
+            long id = item.path("id").asLong();
+            if (id <= 0) continue;
+            Map<String, Object> row = new LinkedHashMap<>();
+            row.put("tmdbId", id);
+            row.put("title", item.path("title").asText(""));
+            row.put("originalTitle", item.path("original_title").asText(""));
+            row.put("overview", item.path("overview").asText(""));
+            row.put("releaseDate", item.path("release_date").asText(""));
+            row.put("rating", item.path("vote_average").asDouble(0));
+            row.put("posterUrl", imageUrl(item.path("poster_path").asText(null)));
+            row.put("imported", existing.contains(id));
+            result.add(row);
         }
         return result;
     }
@@ -248,10 +256,21 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         if (tmdbId == null || tmdbId <= 0) throw new IllegalArgumentException("TMDB ID 不正确");
         if (jdbcTemplate.queryForObject("SELECT COUNT(*) FROM movie WHERE tmdb_id=? AND deleted=0", Long.class, tmdbId) > 0)
             throw new IllegalArgumentException("该 TMDB 影片已导入");
-        JsonNode detail=fetchJson("/movie/"+tmdbId+"?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
-        upsertMovie(detail);adminStatisticsService.clearDashboardCache();movieCacheService.evictMovieCaches();
-        TmdbImportResultDTO r=new TmdbImportResultDTO();r.setMode("single");r.setRequested(1);r.setImported(1);r.setUpdated(0);r.setSkipped(0);r.setSource("TMDB movie "+tmdbId);r.setErrors(List.of());return r;
+        JsonNode detail = fetchJson("/movie/" + tmdbId + "?append_to_response=credits,release_dates,keywords,watch/providers&language=zh-CN");
+        upsertMovie(detail);
+        adminStatisticsService.clearDashboardCache();
+        movieCacheService.evictMovieCaches();
+        TmdbImportResultDTO r = new TmdbImportResultDTO();
+        r.setMode("single");
+        r.setRequested(1);
+        r.setImported(1);
+        r.setUpdated(0);
+        r.setSkipped(0);
+        r.setSource("TMDB movie " + tmdbId);
+        r.setErrors(List.of());
+        return r;
     }
+
     private int normalizeLimit(Integer limit) {
         if (limit == null) {
             return 50;
@@ -294,6 +313,7 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                 .toList();
         return futures.stream().map(CompletableFuture::join).toList();
     }
+
     private JsonNode fetchJson(String pathAndQuery) {
         return tmdbApiClient.get(pathAndQuery);
     }
@@ -335,39 +355,39 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         int viewCount = Math.max(0, (int) Math.round(detail.path("popularity").asDouble(0) * 100));
 
         jdbcTemplate.update("""
-                INSERT INTO movie (
-                    tmdb_id, title, original_title, overview, poster_url, backdrop_url,
-                    release_date, runtime, region, language, original_language, certification,
-                    production_companies, production_countries, collection_name, release_status,
-                    tagline, keywords, average_rating, tmdb_rating, favorite_count, view_count,
-                    status, deleted, create_time, update_time
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    title = VALUES(title),
-                    original_title = VALUES(original_title),
-                    overview = VALUES(overview),
-                    poster_url = VALUES(poster_url),
-                    backdrop_url = VALUES(backdrop_url),
-                    release_date = VALUES(release_date),
-                    runtime = VALUES(runtime),
-                    region = VALUES(region),
-                    language = VALUES(language),
-                    original_language = VALUES(original_language),
-                    certification = VALUES(certification),
-                    production_companies = VALUES(production_companies),
-                    production_countries = VALUES(production_countries),
-                    collection_name = VALUES(collection_name),
-                    release_status = VALUES(release_status),
-                    tagline = VALUES(tagline),
-                    keywords = VALUES(keywords),
-                    average_rating = VALUES(average_rating),
-                    tmdb_rating = VALUES(tmdb_rating),
-                    favorite_count = VALUES(favorite_count),
-                    view_count = VALUES(view_count),
-                    status = VALUES(status),
-                    deleted = VALUES(deleted),
-                    update_time = NOW()
-                """,
+                        INSERT INTO movie (
+                            tmdb_id, title, original_title, overview, poster_url, backdrop_url,
+                            release_date, runtime, region, language, original_language, certification,
+                            production_companies, production_countries, collection_name, release_status,
+                            tagline, keywords, average_rating, tmdb_rating, favorite_count, view_count,
+                            status, deleted, create_time, update_time
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, NOW(), NOW())
+                        ON DUPLICATE KEY UPDATE
+                            title = VALUES(title),
+                            original_title = VALUES(original_title),
+                            overview = VALUES(overview),
+                            poster_url = VALUES(poster_url),
+                            backdrop_url = VALUES(backdrop_url),
+                            release_date = VALUES(release_date),
+                            runtime = VALUES(runtime),
+                            region = VALUES(region),
+                            language = VALUES(language),
+                            original_language = VALUES(original_language),
+                            certification = VALUES(certification),
+                            production_companies = VALUES(production_companies),
+                            production_countries = VALUES(production_countries),
+                            collection_name = VALUES(collection_name),
+                            release_status = VALUES(release_status),
+                            tagline = VALUES(tagline),
+                            keywords = VALUES(keywords),
+                            average_rating = VALUES(average_rating),
+                            tmdb_rating = VALUES(tmdb_rating),
+                            favorite_count = VALUES(favorite_count),
+                            view_count = VALUES(view_count),
+                            status = VALUES(status),
+                            deleted = VALUES(deleted),
+                            update_time = NOW()
+                        """,
                 tmdbId,
                 title,
                 originalTitle,
@@ -439,10 +459,10 @@ public class TmdbImportServiceImpl implements TmdbImportService {
                     continue;
                 }
                 jdbcTemplate.update("""
-                        INSERT IGNORE INTO movie_watch_provider (
-                            movie_id, region, provider_id, provider_name, logo_url, access_type, display_priority
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-                        """,
+                                INSERT IGNORE INTO movie_watch_provider (
+                                    movie_id, region, provider_id, provider_name, logo_url, access_type, display_priority
+                                ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                                """,
                         movieId,
                         region,
                         providerId,
@@ -503,16 +523,16 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             return null;
         }
         jdbcTemplate.update("""
-                INSERT INTO actor (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
-                VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
-                    original_name = VALUES(original_name),
-                    gender = VALUES(gender),
-                    profile_url = VALUES(profile_url),
-                    deleted = 0,
-                    update_time = NOW()
-                """,
+                        INSERT INTO actor (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
+                        VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
+                        ON DUPLICATE KEY UPDATE
+                            name = VALUES(name),
+                            original_name = VALUES(original_name),
+                            gender = VALUES(gender),
+                            profile_url = VALUES(profile_url),
+                            deleted = 0,
+                            update_time = NOW()
+                        """,
                 tmdbPersonId,
                 textOrNull(actorNode, "name"),
                 textOrNull(actorNode, "original_name"),
@@ -528,16 +548,16 @@ public class TmdbImportServiceImpl implements TmdbImportService {
             return null;
         }
         jdbcTemplate.update("""
-                INSERT INTO director (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
-                VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
-                ON DUPLICATE KEY UPDATE
-                    name = VALUES(name),
-                    original_name = VALUES(original_name),
-                    gender = VALUES(gender),
-                    profile_url = VALUES(profile_url),
-                    deleted = 0,
-                    update_time = NOW()
-                """,
+                        INSERT INTO director (tmdb_id, name, original_name, gender, profile_url, deleted, create_time, update_time)
+                        VALUES (?, ?, ?, ?, ?, 0, NOW(), NOW())
+                        ON DUPLICATE KEY UPDATE
+                            name = VALUES(name),
+                            original_name = VALUES(original_name),
+                            gender = VALUES(gender),
+                            profile_url = VALUES(profile_url),
+                            deleted = 0,
+                            update_time = NOW()
+                        """,
                 tmdbPersonId,
                 textOrNull(directorNode, "name"),
                 textOrNull(directorNode, "original_name"),
@@ -665,5 +685,6 @@ public class TmdbImportServiceImpl implements TmdbImportService {
         tmdbFetchExecutor.shutdownNow();
     }
 
-    private record FetchedMovie(Long tmdbId, JsonNode detail, String error) {}
+    private record FetchedMovie(Long tmdbId, JsonNode detail, String error) {
+    }
 }
