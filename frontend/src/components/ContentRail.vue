@@ -5,7 +5,7 @@
         <p v-if="eyebrow" class="section-kicker text-[10px] font-bold tracking-[0.2em] text-[var(--text-secondary)] uppercase">{{ eyebrow }}</p>
         <h2 v-if="title" class="mt-1 text-xl font-bold tracking-tight md:text-2xl text-[var(--text-primary)]">{{ title }}</h2>
       </div>
-      <p v-if="description" class="hidden max-w-md text-left md:text-right text-xs font-medium text-[var(--text-muted)] md:block">{{ description }}</p>
+      <p v-if="description" class="hidden max-w-xl text-left md:text-right text-xs font-medium text-[var(--text-muted)] md:block">{{ description }}</p>
     </div>
 
     <div class="rail-shell">
