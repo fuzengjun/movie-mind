@@ -201,6 +201,7 @@
       eyebrow="More Like This"
       description="综合影片类型、主题标签、导演与演出阵容，为你找到气质相近的作品。"
       :movies="relatedMovies"
+      show-reasons
     />
     <div v-else class="surface-card related-empty-state">
       <p class="section-kicker">More Like This</p>

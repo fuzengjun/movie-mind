@@ -12,9 +12,9 @@
     </header>
 
     <div class="recommend-stats">
-      <div><b>{{ recommendations.length }}</b><span>推荐影片</span></div>
-      <div><b>{{ algorithmLabel }}</b><span>当前策略</span></div>
-      <div><b>30 min</b><span>推荐缓存</span></div>
+      <div><span>推荐影片</span><b>{{ recommendations.length }}</b></div>
+      <div><span>当前策略</span><b>{{ algorithmLabel }}</b></div>
+      <div><span>推荐缓存</span><b>30 min</b></div>
     </div>
 
     <div class="surface-card recommend-content" v-loading="loading">
@@ -42,13 +42,13 @@ const loading = ref(false)
 const recommendations = ref([])
 
 const collaborative = computed(() => recommendations.value.some((item) => item.algorithm === 'USER_CF_COSINE'))
-const algorithmLabel = computed(() => collaborative.value ? '协同过滤' : '冷启动')
+const algorithmLabel = computed(() => collaborative.value ? '兴趣匹配' : '综合精选')
 const summary = computed(() => collaborative.value
-  ? '我们找到了与你兴趣相近的观众，并从他们喜欢的影片中整理出这份片单。'
-  : '你的行为数据还不多，当前片单综合热门程度、评分与上映时间生成。')
+  ? '根据与你观影兴趣相近的用户生成。'
+  : '你的行为数据还不多，暂时结合热门、高分与最新影片为你挑选。')
 
 const recommendationDescription = computed(() => collaborative.value
-  ? '根据与你观影兴趣相近的用户生成，已自动排除你接触过的影片。'
+  ? '根据与你观影兴趣相近的用户生成。'
   : '你的行为数据还不多，暂时结合热门、高分与最新影片为你挑选。')
 
 async function loadRecommendations() {
@@ -74,8 +74,8 @@ onMounted(loadRecommendations)
 .recommend-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
 .recommend-stats div { padding: 1.35rem; border: 1px solid var(--border-soft); border-radius: var(--radius-lg); background: var(--surface-secondary); }
 .recommend-stats b, .recommend-stats span { display: block; }
-.recommend-stats b { font-size: 1.35rem; }
-.recommend-stats span { margin-top: .35rem; color: var(--text-muted); font-size: .75rem; }
+.recommend-stats b { margin-top: .4rem; font-size: 1.35rem; }
+.recommend-stats span { color: var(--text-muted); font-size: .75rem; font-weight: 650; letter-spacing: .04em; }
 .recommend-content { min-height: 360px; padding: clamp(1.25rem, 4vw, 2rem); overflow: hidden; }
 @media (max-width: 700px) { .recommend-hero { align-items: stretch; flex-direction: column; } .recommend-stats { grid-template-columns: 1fr; } }
 </style>

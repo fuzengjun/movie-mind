@@ -38,13 +38,17 @@
           </span>
         </div>
       </div>
-      <p v-if="movie.reason" class="recommend-reason">{{ movie.reason }}</p>
+      <p v-if="showReason && movie.reason" class="recommend-reason">{{ movie.reason }}</p>
     </div>
   </RouterLink>
 </template>
 
 <script setup>
 defineProps({
+  showReason: {
+    type: Boolean,
+    default: false
+  },
   movie: {
     type: Object,
     default: () => ({})

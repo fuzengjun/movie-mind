@@ -10,7 +10,7 @@
 
     <div class="rail-shell">
       <div ref="railRef" class="content-rail" @scroll.passive="updateControls">
-        <MovieCard v-for="movie in movies" :key="movie.id || movie.title" :movie="movie" />
+        <MovieCard v-for="movie in movies" :key="movie.id || movie.title" :movie="movie" :show-reason="showReasons" />
       </div>
       <button v-if="controls && canScrollLeft" class="rail-control rail-control-left" type="button" aria-label="向左浏览影片" @click="scrollRail(-1)">
         <span aria-hidden="true">‹</span>
@@ -31,7 +31,8 @@ const props = defineProps({
   eyebrow: { type: String, default: '' },
   description: { type: String, default: '' },
   movies: { type: Array, default: () => [] },
-  controls: { type: Boolean, default: true }
+  controls: { type: Boolean, default: true },
+  showReasons: { type: Boolean, default: false }
 })
 
 const railRef = ref(null)
