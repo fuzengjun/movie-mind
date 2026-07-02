@@ -53,8 +53,10 @@
       </div>
     </div>
 
-    <div v-else class="text-center py-20 text-[var(--text-muted)] text-sm">
-      正在加载演职人员信息...
+    <div v-else-if="loading" class="text-center py-20 text-[var(--text-muted)] text-sm">正在加载演职人员信息...</div>
+    <div v-else class="surface-card cast-error-state">
+      <h2>无法加载演职人员</h2><p>{{ errorMessage }}</p>
+      <button class="pill-button is-active" @click="$router.go(0)">重新加载</button>
     </div>
   </section>
 </template>
@@ -63,7 +65,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { getMovieDetail } from '@/api/movie'
-import { mockMovies } from '@/utils/mockData'
+
 
 const props = defineProps({
   id: {
@@ -73,6 +75,8 @@ const props = defineProps({
 })
 
 const movie = ref(null)
+const loading = ref(true)
+const errorMessage = ref('')
 const router = useRouter()
 
 function goBack() {
@@ -168,9 +172,9 @@ onMounted(async () => {
     const response = await getMovieDetail(props.id)
     movie.value = response.data
   } catch (error) {
-    console.warn('API error, falling back to mock movie details in CastView:', error)
-    const currentId = Number(props.id)
-    movie.value = mockMovies.find((m) => m.id === currentId) || mockMovies[0]
+    errorMessage.value = error.message || '演职人员信息暂时无法加载。'
+  } finally {
+    loading.value = false
   }
 })
 </script>
@@ -307,4 +311,5 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.cast-error-state{display:grid;justify-items:start;gap:10px;padding:32px}.cast-error-state h2,.cast-error-state p{margin:0}.cast-error-state p{color:var(--text-secondary)}
 </style>

@@ -46,8 +46,19 @@
       <span class="text-sm">暂无推荐内容</span>
     </div>
 
+    <div v-if="errorMessage && !loading" class="surface-card home-state-panel">
+      <p class="section-kicker">Unable to load</p>
+      <h2>首页内容暂时无法加载</h2>
+      <p>{{ errorMessage }}</p>
+      <button class="pill-button is-active" type="button" @click="$router.go(0)">重新加载</button>
+    </div>
+    <div v-else-if="!loading && !movies.length" class="surface-card home-state-panel">
+      <p class="section-kicker">Library Empty</p>
+      <h2>片库还没有内容</h2>
+      <p>管理员导入影片后，热门、高分与最新内容会在这里出现。</p>
+    </div>
     <!-- 影视展示轨 (Rails) -->
-    <div class="space-y-12">
+    <div v-if="movies.length" class="space-y-12">
       <ContentRail
         v-if="userStore.token && personalizedMovies.length"
         title="为你推荐"
@@ -87,10 +98,12 @@ import { getMovieList } from '@/api/movie'
 import { getMyRecommend } from '@/api/recommend'
 import { useUserStore } from '@/stores/user'
 import ContentRail from '@/components/ContentRail.vue'
-import { mockMovies } from '@/utils/mockData'
+
 
 const userStore = useUserStore()
 const movies = ref([])
+const loading = ref(true)
+const errorMessage = ref('')
 const personalizedMovies = ref([])
 
 const personalizedDescription = computed(() => personalizedMovies.value[0]?.algorithm === 'USER_CF_COSINE'
@@ -122,10 +135,12 @@ const heroStyle = computed(() => {
 onMounted(async () => {
   try {
     const response = await getMovieList()
-    movies.value = response.data && response.data.length > 0 ? response.data : mockMovies
+    movies.value = response.data || []
   } catch (error) {
-    console.warn('API error, falling back to mock movies:', error)
-    movies.value = mockMovies
+    movies.value = []
+    errorMessage.value = error.message || '影片内容暂时无法加载，请稍后重试。'
+  } finally {
+    loading.value = false
   }
   if (userStore.token) {
     try {
@@ -155,4 +170,5 @@ onMounted(async () => {
   opacity: 0.45;
   user-select: none;
 }
+.home-state-panel{display:grid;justify-items:start;gap:10px;padding:36px}.home-state-panel h2,.home-state-panel p{margin:0}.home-state-panel p{color:var(--text-secondary)}
 </style>

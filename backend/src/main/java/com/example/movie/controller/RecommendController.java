@@ -23,7 +23,7 @@ public class RecommendController {
 
     @GetMapping("/me")
     public Result<List<RecommendationVO>> recommend(Authentication authentication,
-                                                     @RequestParam(defaultValue = "12") int limit) {
+                                                    @RequestParam(defaultValue = "12") int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 30));
         try {
             return Result.success(recommendationService.recommendFor(authentication.getName(), safeLimit));

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 import java.util.Map;
 
@@ -22,8 +23,8 @@ public class AdminTmdbController {
 
 
     @GetMapping("/search")
-    public Result<List<Map<String,Object>>> search(@RequestParam String query,
-                                                   @RequestParam(defaultValue = "1") Integer page) {
+    public Result<List<Map<String, Object>>> search(@RequestParam String query,
+                                                    @RequestParam(defaultValue = "1") Integer page) {
         return Result.success(tmdbImportService.searchMovies(query, page));
     }
 
@@ -31,6 +32,7 @@ public class AdminTmdbController {
     public Result<TmdbImportResultDTO> importOne(@PathVariable Long tmdbId) {
         return Result.success(tmdbImportService.importMovie(tmdbId));
     }
+
     @PostMapping("/import/popular")
     public Result<TmdbImportResultDTO> importPopular(@RequestParam(required = false) Integer limit) {
         return Result.success(tmdbImportService.importPopularMovies(limit));
@@ -38,7 +40,7 @@ public class AdminTmdbController {
 
     @PostMapping("/add")
     public Result<TmdbImportResultDTO> addNewMovies(@RequestParam(required = false) Integer limit,
-                                                        @RequestParam(defaultValue = "popular") String source) {
+                                                    @RequestParam(defaultValue = "popular") String source) {
         return Result.success(tmdbImportService.addNewMovies(limit, source));
     }
 

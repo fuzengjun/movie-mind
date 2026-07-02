@@ -196,32 +196,45 @@
     />
 
     <!-- 关联推荐 -->
-    <ContentRail 
-      :title="personalizedRelated ? '为你推荐' : '继续探索'"
-      eyebrow="Up Next" 
-      :description="personalizedRelated ? '结合你的历史行为生成，并排除已经接触过的影片。' : '从同一片库中继续挑选相似气质的内容。'"
-      :movies="relatedMovies" 
+    <ContentRail v-if="relatedMovies.length"
+      title="相似影片"
+      eyebrow="More Like This"
+      description="综合影片类型、主题标签、导演与演出阵容，为你找到气质相近的作品。"
+      :movies="relatedMovies"
     />
+    <div v-else class="surface-card related-empty-state">
+      <p class="section-kicker">More Like This</p>
+      <h2>暂时没有相似影片</h2>
+      <p>片库内容继续丰富后，这里会出现更多相关作品。</p>
+    </div>
 
     <!-- 用户影评与讨论区 -->
     <MovieActions v-if="movie?.id" :movie-id="Number(movie.id)" mode="comments" />
   </section>
-</template>
+
+  <div v-else-if="loading" class="detail-page-state">
+    <div class="surface-card detail-state-card"><div class="state-orbit"></div><p>正在加载影片资料...</p></div>
+  </div>
+  <div v-else class="detail-page-state">
+    <div class="surface-card detail-state-card is-error">
+      <p class="section-kicker">Unable to load</p><h1>影片详情无法加载</h1><p>{{ errorMessage }}</p>
+      <div class="flex gap-3"><button class="pill-button is-active" @click="loadMovie">重新加载</button><RouterLink class="pill-button no-underline" to="/movies">返回影视库</RouterLink></div>
+    </div>
+  </div></template>
 
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { getMovieDetail, getMovieList } from '@/api/movie'
-import { getMyRecommend } from '@/api/recommend'
-import { useUserStore } from '@/stores/user'
+import { getMovieDetail, getSimilarMovies } from '@/api/movie'
 import ContentRail from '@/components/ContentRail.vue'
 import CastRail from '@/components/CastRail.vue'
 import MovieActions from '@/components/MovieActions.vue'
-import { mockMovies } from '@/utils/mockData'
 
 const route = useRoute()
-const userStore = useUserStore()
 const movie = ref(null)
+const loading = ref(true)
+const errorMessage = ref('')
+const relatedError = ref('')
 
 // 播放渠道滚轨滚动状态控制
 const providerRailRef = ref(null)
@@ -347,7 +360,7 @@ const actorsString = computed(() => {
   return String(movie.value.actors)
 })
 
-const relatedMovies = computed(() => relatedSource.value.filter((item) => item.id !== movie.value?.id).slice(0, 8))
+const relatedMovies = computed(() => relatedSource.value.slice(0, 8))
 
 const spokenLanguagesText = computed(() => {
   const values = normalizeList(movie.value?.spokenLanguages || movie.value?.language)
@@ -503,33 +516,31 @@ const castAndCrew = computed(() => {
 })
 
 
-async function loadMovie() {
+async function loadSimilarMovies() {
+  relatedError.value = ''
   try {
-    const [detailResponse, listResponse] = await Promise.all([
-      getMovieDetail(route.params.id),
-      getMovieList()
-    ])
-    movie.value = detailResponse.data
-    relatedSource.value = listResponse.data && listResponse.data.length > 0 ? listResponse.data : mockMovies
-    personalizedRelated.value = false
-    if (userStore.token) {
-      try {
-        const recommendResponse = await getMyRecommend({ limit: 12 })
-        if (recommendResponse.data?.length) {
-          relatedSource.value = recommendResponse.data
-          personalizedRelated.value = true
-        }
-      } catch (error) {
-        console.warn('Personalized related movies are temporarily unavailable:', error)
-      }
-    }
+    const response = await getSimilarMovies(route.params.id, { limit: 8 })
+    relatedSource.value = response.data || []
   } catch (error) {
-    console.warn('API error, falling back to mock movie details:', error)
-    const currentId = Number(route.params.id)
-    const matched = mockMovies.find((m) => m.id === currentId) || mockMovies[0]
-    movie.value = matched
-    relatedSource.value = mockMovies
+    relatedSource.value = []
+    relatedError.value = error.message || '请稍后重试。'
   }
+}
+async function loadMovie() {
+  loading.value = true
+  errorMessage.value = ''
+  movie.value = null
+  relatedSource.value = []
+  try {
+    const detailResponse = await getMovieDetail(route.params.id)
+    movie.value = detailResponse.data
+    await loadSimilarMovies()
+  } catch (error) {
+    errorMessage.value = error.message || '影片详情暂时无法加载，请稍后重试。'
+  } finally {
+    loading.value = false
+  }
+
 }
 
 watch(
@@ -849,4 +860,5 @@ onBeforeUnmount(() => {
     grid-template-columns: 1fr;
     gap: 28px;
   }
-}</style>
+}.related-empty-state{display:grid;gap:8px;padding:30px}.related-empty-state h2,.related-empty-state p{margin:0}.related-empty-state p{color:var(--text-secondary)}.detail-page-state{display:grid;min-height:70vh;padding-top:110px;place-items:center}.detail-state-card{display:grid;min-width:min(520px,92vw);justify-items:center;gap:14px;padding:44px;text-align:center}.detail-state-card h1,.detail-state-card p{margin:0}.detail-state-card>p{color:var(--text-secondary)}.state-orbit{width:34px;height:34px;border:2px solid var(--border-soft);border-top-color:var(--accent-primary);border-radius:50%;animation:state-spin .8s linear infinite}@keyframes state-spin{to{transform:rotate(360deg)}}
+</style>

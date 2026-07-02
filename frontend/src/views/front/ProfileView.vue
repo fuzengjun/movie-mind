@@ -94,34 +94,48 @@
               <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">{{ currentTabLabel }}</h2>
               <p class="text-sm text-[var(--text-secondary)] mt-1">管理和查看您的{{ currentTabLabel }}历史记录。</p>
             </div>
-            <span class="detail-chip" v-if="records.length">共 {{ records.length }} 个记录</span>
+            <div class="record-tools">
+              <span class="detail-chip" v-if="records.length">共 {{ totalRecords }} 个记录</span>
+            </div>
           </div>
 
           <div v-loading="loadingRecords" class="min-h-[200px] flex flex-col justify-center">
-            <div v-if="records.length" class="record-grid">
-              <RouterLink 
-                v-for="r in records" 
-                :key="r.id" 
-                :to="`/movies/${r.movieId}`" 
-                class="record-card-new"
-              >
-                <div class="record-poster-wrapper">
-                  <img v-if="r.posterUrl" :src="r.posterUrl" :alt="r.title" class="record-poster" />
-                  <div v-else class="record-poster-fallback">
-                    <span>{{ r.title?.[0] }}</span>
+            <div v-if="records.length">
+              <div class="record-grid">
+                <RouterLink 
+                  v-for="r in records" 
+                  :key="r.id" 
+                  :to="`/movies/${r.movieId}`" 
+                  class="record-card-new"
+                >
+                  <div class="record-poster-wrapper">
+                    <img v-if="r.posterUrl" :src="r.posterUrl" :alt="r.title" class="record-poster" />
+                    <div v-else class="record-poster-fallback">
+                      <span>{{ r.title?.[0] }}</span>
+                    </div>
+                    <!-- Rating Badge Overlay -->
+                    <div class="record-badge" v-if="r.score">
+                      <el-icon class="text-yellow-400 mr-xs"><StarFilled /></el-icon>
+                      <span>{{ r.score }} 分</span>
+                    </div>
                   </div>
-                  <!-- Rating Badge Overlay -->
-                  <div class="record-badge" v-if="r.score">
-                    <el-icon class="text-yellow-400 mr-xs"><StarFilled /></el-icon>
-                    <span>{{ r.score }} 分</span>
+                  <div class="record-info">
+                    <h3 class="record-title" :title="r.title">{{ r.title }}</h3>
+                    <p class="record-time">{{ format(r.actionTime) }}</p>
                   </div>
-                </div>
-                <div class="record-info">
-                  <h3 class="record-title" :title="r.title">{{ r.title }}</h3>
-                  <p class="record-time">{{ format(r.actionTime) }}</p>
-                </div>
-              </RouterLink>
+                </RouterLink>
+              </div>
+              <div class="pager">
+                <el-pagination
+                  v-model:current-page="currentPage"
+                  :page-size="pageSize"
+                  :total="totalRecords"
+                  layout="prev, pager, next, jumper, total"
+                  @current-change="handlePageChange"
+                />
+              </div>
             </div>
+            <div v-else-if="recordError" class="record-error"><p>{{ recordError }}</p><button class="pill-button" @click="load(tab)">重试</button></div>
             <el-empty v-else :description="'暂无' + currentTabLabel + '记录'" />
           </div>
         </div>
@@ -153,6 +167,10 @@ const router = useRouter()
 const tab = ref('profile')
 const records = ref([])
 const loadingRecords = ref(false)
+const recordError = ref('')
+const currentPage = ref(1)
+const totalRecords = ref(0)
+const pageSize = ref(18)
 
 const form = reactive({
   username: '',
@@ -190,9 +208,19 @@ async function init() {
 async function load(name) {
   if (!name || name === 'profile' || name === 'password') return
   loadingRecords.value = true
+  recordError.value = ''
   try {
-    const r = await getMyRecords(name, { pageSize: 50 })
+    const params = { 
+      pageNum: currentPage.value,
+      pageSize: pageSize.value 
+    }
+    const r = await getMyRecords(name, params)
     records.value = r.data?.records || []
+    totalRecords.value = r.data?.total || 0
+  } catch (error) {
+    records.value = []
+    totalRecords.value = 0
+    recordError.value = error.message || '记录暂时无法加载。'
   } finally {
     loadingRecords.value = false
   }
@@ -200,7 +228,10 @@ async function load(name) {
 
 async function changeSection(name) {
   tab.value = name
+  currentPage.value = 1
+  totalRecords.value = 0
   await load(name)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
 async function saveProfile() {
@@ -229,7 +260,15 @@ function format(value) {
     pad(date.getSeconds())
 }
 
-onMounted(init)
+async function handlePageChange(val) {
+  currentPage.value = val
+  await load(tab.value)
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+onMounted(async () => {
+  await init()
+})
 </script>
 
 <style scoped>
@@ -432,5 +471,11 @@ onMounted(init)
 }
 .mr-xs {
   margin-right: 2px;
+}
+.record-tools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.record-tools .el-select{width:220px}.record-error{display:grid;justify-items:center;gap:12px;color:var(--text-secondary)}
+.pager {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
 }
 </style>

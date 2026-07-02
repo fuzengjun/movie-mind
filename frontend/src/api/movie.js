@@ -23,6 +23,7 @@ export function getHotMovies() {
 }
 
 export function getRankings(params) { return request({ url: '/movies/rankings', method: 'get', params }) }
+export function getSimilarMovies(id, params) { return request({ url: `/movies/${id}/similar`, method: 'get', params }) }
 
 export function getMoviePage(params) { return request({ url: '/movies/page', method: 'get', params }) }
 export function getMovieFilters() { return request({ url: '/movies/filters', method: 'get' }) }

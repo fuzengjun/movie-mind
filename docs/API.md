@@ -60,8 +60,8 @@ tmdb:
 - POST /api/ratings：新增或更新 1–10 分评分。
 - POST|DELETE /api/watchlist/{id}：标记或取消“想看”。
 - POST|DELETE /api/watch-history/{id}：标记或取消“看过”；标记后自动移出想看。
-- GET /api/user/records/{favorites|ratings|watchlist|watched|views}：个人记录。
-- GET /api/movies/rankings：排行榜。
+- GET /api/movies/rankings：分页排行榜，参数为 `type`、`pageNum`、`pageSize`。
+- GET /api/movies/{id}/similar?limit=8：按共同类型、标签、导演和演员获取相似影片。
 ## 影片检索与 TMDB 单片导入
 
 - GET /api/movies/page：参数 keyword、category、region、year、sort、pageNum、pageSize。
