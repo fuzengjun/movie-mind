@@ -72,7 +72,7 @@
         title="热门影视" 
         eyebrow="Featured Row" 
         description="基于当前片库热度与浏览表现展示重点内容。" 
-        :movies="movies.slice(0, 8)" 
+        :movies="movies.slice(0, 20)" 
       />
       
       <ContentRail 
@@ -122,8 +122,8 @@ const featuredMovie = computed(() => {
   })
   return sorted[0]
 })
-const ratedMovies = computed(() => [...movies.value].sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0)).slice(0, 8))
-const recentMovies = computed(() => [...movies.value].sort((a, b) => String(b.releaseDate || '').localeCompare(String(a.releaseDate || ''))).slice(0, 8))
+const ratedMovies = computed(() => [...movies.value].sort((a, b) => Number(b.averageRating || 0) - Number(a.averageRating || 0)).slice(0, 20))
+const recentMovies = computed(() => [...movies.value].sort((a, b) => String(b.releaseDate || '').localeCompare(String(a.releaseDate || ''))).slice(0, 20))
 
 const heroStyle = computed(() => {
   const image = featuredMovie.value?.backdropUrl || featuredMovie.value?.posterUrl
@@ -144,7 +144,7 @@ onMounted(async () => {
   }
   if (userStore.token) {
     try {
-      const response = await getMyRecommend({ limit: 12 })
+      const response = await getMyRecommend({ limit: 20 })
       personalizedMovies.value = response.data || []
     } catch (error) {
       console.warn('Personalized recommendations are temporarily unavailable:', error)

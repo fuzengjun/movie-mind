@@ -54,7 +54,7 @@ const recommendationDescription = computed(() => collaborative.value
 async function loadRecommendations() {
   loading.value = true
   try {
-    const response = await getMyRecommend({ limit: 24 })
+    const response = await getMyRecommend({ limit: 30 })
     recommendations.value = response.data || []
   } catch {
     recommendations.value = []
