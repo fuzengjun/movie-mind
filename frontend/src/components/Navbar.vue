@@ -47,7 +47,7 @@
     </div>
 
     <!-- 抽屉菜单 -->
-    <el-drawer v-model="drawerVisible" :with-header="false" size="82%">
+    <el-drawer v-model="drawerVisible" class="mobile-nav-drawer" modal-class="mobile-nav-overlay" append-to-body :modal="true" :lock-scroll="true" :close-on-click-modal="true" :with-header="false" direction="ltr" size="min(72vw, 320px)">
       <div class="space-y-4 px-2 py-8">
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/" @click="drawerVisible = false">首页</RouterLink>
         <RouterLink class="block rounded-xl px-4 py-3 nav-link" to="/movies" @click="drawerVisible = false">影视库</RouterLink>

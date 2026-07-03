@@ -372,6 +372,26 @@ html[data-theme='light'] .pill-button-premium:hover {
   color: var(--text-primary);
 }
 
+.mobile-nav-overlay {
+  background-color: rgba(0, 0, 0, 0.58) !important;
+  pointer-events: auto !important;
+}
+
+.mobile-nav-overlay .mobile-nav-drawer.el-drawer {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary);
+  box-shadow: -18px 0 48px rgba(0, 0, 0, 0.24);
+}
+
+.mobile-nav-overlay .mobile-nav-drawer.ltr {
+  box-shadow: 18px 0 48px rgba(0, 0, 0, 0.24);
+}
+
+.mobile-nav-overlay .mobile-nav-drawer .el-drawer__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background-color: var(--bg-secondary);
+}
 .el-drawer {
   background: var(--surface-strong);
 }

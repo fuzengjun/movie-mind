@@ -14,7 +14,7 @@
       <aside class="surface-card hidden h-fit p-4 md:block"><AdminNav /></aside>
       <main class="min-w-0"><router-view /></main>
     </div>
-    <el-drawer v-model="drawerVisible" direction="ltr" size="78%" :with-header="false">
+    <el-drawer v-model="drawerVisible" class="mobile-nav-drawer" modal-class="mobile-nav-overlay" append-to-body :modal="true" :lock-scroll="true" :close-on-click-modal="true" direction="ltr" size="min(72vw, 320px)" :with-header="false">
       <div class="space-y-5 px-2 py-6">
         <p class="section-kicker text-xs">Admin Menu</p>
         <AdminNav @navigate="drawerVisible = false" />
