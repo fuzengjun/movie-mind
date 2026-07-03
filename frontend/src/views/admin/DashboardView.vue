@@ -68,7 +68,7 @@
       <div class="flex items-center justify-between gap-3">
         <div>
           <p class="section-kicker text-xs">Highlights</p>
-          <h3 class="mt-2 text-2xl font-semibold">热门影片条带</h3>
+          <h3 class="mt-2 text-2xl font-semibold">热门影视精选</h3>
         </div>
         <button class="pill-button" @click="fetchStatistics">刷新</button>
       </div>

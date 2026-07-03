@@ -26,9 +26,28 @@
       </template>
     </div>
 
-    <div v-if="!errorMessage && total > pageSize" class="ranking-pager surface-card">
-      <el-pagination v-model:current-page="pageNum" :page-size="pageSize" :total="total"
-                     layout="prev, pager, next, jumper, total" @current-change="goPage"/>
+    <div class="pager-container" v-if="!errorMessage && total > pageSize">
+      <el-pagination
+        v-model:current-page="pageNum"
+        :page-size="pageSize"
+        :total="total"
+        layout="prev, pager, next"
+        prev-text="上一页"
+        next-text="下一页"
+        @current-change="goPage"
+      />
+      <div class="pager-info">
+        共 {{ Math.ceil(total / pageSize) }} 页 / {{ total }} 个，跳至
+        <input
+          type="number"
+          v-model.number="jumperPage"
+          min="1"
+          :max="Math.ceil(total / pageSize)"
+          class="pager-jumper-input"
+          @keyup.enter="handleJumper"
+        />
+        页
+      </div>
     </div>
   </section>
 </template>
@@ -74,6 +93,16 @@ function goPage(page) {
   window.scrollTo({top: 0, behavior: 'smooth'})
 }
 
+const jumperPage = ref('')
+function handleJumper() {
+  const p = parseInt(jumperPage.value, 10)
+  const maxPage = Math.ceil(total.value / pageSize)
+  if (p >= 1 && p <= maxPage) {
+    goPage(p)
+    jumperPage.value = ''
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -107,10 +136,98 @@ onMounted(load)
   min-height: 280px
 }
 
-.ranking-pager {
+.pager-container {
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 18px 24px
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.pager-info {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pager-jumper-input {
+  width: 54px;
+  height: 30px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 0.88rem;
+  outline: none;
+  transition: border-color 0.2s, background-color 0.2s;
+  box-sizing: border-box;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pager-jumper-input::-webkit-outer-spin-button,
+.pager-jumper-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+.pager-jumper-input:focus {
+  border-color: var(--text-primary);
+  background-color: var(--bg-secondary);
+}
+
+:deep(.el-pagination) {
+  --el-pagination-button-bg-color: var(--surface-secondary) !important;
+  --el-pagination-hover-color: var(--text-primary) !important;
+  --el-pagination-button-color: var(--text-secondary) !important;
+  --el-pagination-button-disabled-color: var(--text-muted) !important;
+}
+
+:deep(.el-pagination .btn-next), :deep(.el-pagination .btn-prev) {
+  padding: 0 12px !important;
+  border-radius: 6px !important;
+  border: 1px solid var(--border-soft) !important;
+  background-color: var(--surface-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-size: 13px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  transition: all 0.2s !important;
+}
+
+:deep(.el-pagination .btn-next:hover), :deep(.el-pagination .btn-prev:hover) {
+  color: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+}
+
+:deep(.el-pagination .el-pager li) {
+  border-radius: 6px !important;
+  border: 1px solid var(--border-soft) !important;
+  background-color: var(--surface-secondary) !important;
+  color: var(--text-secondary) !important;
+  font-size: 14px !important;
+  min-width: 32px !important;
+  height: 32px !important;
+  line-height: 30px !important;
+  margin: 0 2px !important;
+  font-weight: 500 !important;
+  transition: all 0.2s !important;
+}
+
+:deep(.el-pagination .el-pager li:hover) {
+  color: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+}
+
+:deep(.el-pagination .el-pager li.is-active) {
+  background-color: var(--text-primary) !important;
+  border-color: var(--text-primary) !important;
+  color: var(--bg-primary) !important;
 }
 
 .state-panel {
