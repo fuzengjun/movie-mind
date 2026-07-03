@@ -28,7 +28,7 @@ public class RankingController {
             case "favorite" -> "m.favorite_count DESC, m.average_rating DESC, m.id DESC";
             case "view" -> "m.view_count DESC, m.average_rating DESC, m.id DESC";
             case "latest" -> "m.release_date DESC, m.id DESC";
-            case "user-rating" -> "m.average_rating DESC, rating_count DESC, m.id DESC";
+            case "user-rating" -> "m.average_rating DESC, ratingCount DESC, m.id DESC";
             case "rating" ->
                     "COALESCE(NULLIF(m.average_rating, 0), m.tmdb_rating, 0) DESC, m.view_count DESC, m.id DESC";
             default -> throw new IllegalArgumentException("不支持的排行榜类型");
