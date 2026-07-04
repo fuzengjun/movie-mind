@@ -1,21 +1,30 @@
 <template>
   <section class="content-rail-section space-y-4">
-    <div v-if="title || eyebrow || description" class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 px-1">
+    <div v-if="title || eyebrow || description"
+         class="flex flex-col md:flex-row md:items-end md:justify-between gap-2 px-1">
       <div>
-        <p v-if="eyebrow" class="section-kicker text-[10px] font-bold tracking-[0.2em] text-[var(--text-secondary)] uppercase">{{ eyebrow }}</p>
-        <h2 v-if="title" class="mt-1 text-xl font-bold tracking-tight md:text-2xl text-[var(--text-primary)]">{{ title }}</h2>
+        <p v-if="eyebrow"
+           class="section-kicker text-[10px] font-bold tracking-[0.2em] text-[var(--text-secondary)] uppercase">
+          {{ eyebrow }}</p>
+        <h2 v-if="title" class="mt-1 text-xl font-bold tracking-tight md:text-2xl text-[var(--text-primary)]">{{
+            title
+          }}</h2>
       </div>
-      <p v-if="description" class="hidden max-w-xl text-left md:text-right text-xs font-medium text-[var(--text-muted)] md:block">{{ description }}</p>
+      <p v-if="description"
+         class="hidden max-w-xl text-left md:text-right text-xs font-medium text-[var(--text-muted)] md:block">
+        {{ description }}</p>
     </div>
 
     <div class="rail-shell">
       <div ref="railRef" class="content-rail" @scroll.passive="updateControls">
-        <MovieCard v-for="movie in movies" :key="movie.id || movie.title" :movie="movie" :show-reason="showReasons" />
+        <MovieCard v-for="movie in movies" :key="movie.id || movie.title" :movie="movie" :show-reason="showReasons"/>
       </div>
-      <button v-if="controls && canScrollLeft" class="rail-control rail-control-left" type="button" aria-label="向左浏览影片" @click="scrollRail(-1)">
+      <button v-if="controls && canScrollLeft" class="rail-control rail-control-left" type="button"
+              aria-label="向左浏览影片" @click="scrollRail(-1)">
         <span aria-hidden="true">‹</span>
       </button>
-      <button v-if="controls && canScrollRight" class="rail-control rail-control-right" type="button" aria-label="向右浏览影片" @click="scrollRail(1)">
+      <button v-if="controls && canScrollRight" class="rail-control rail-control-right" type="button"
+              aria-label="向右浏览影片" @click="scrollRail(1)">
         <span aria-hidden="true">›</span>
       </button>
     </div>
@@ -23,16 +32,16 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import {nextTick, onBeforeUnmount, onMounted, ref, watch} from 'vue'
 import MovieCard from './MovieCard.vue'
 
 const props = defineProps({
-  title: { type: String, default: '' },
-  eyebrow: { type: String, default: '' },
-  description: { type: String, default: '' },
-  movies: { type: Array, default: () => [] },
-  controls: { type: Boolean, default: true },
-  showReasons: { type: Boolean, default: false }
+  title: {type: String, default: ''},
+  eyebrow: {type: String, default: ''},
+  description: {type: String, default: ''},
+  movies: {type: Array, default: () => []},
+  controls: {type: Boolean, default: true},
+  showReasons: {type: Boolean, default: false}
 })
 
 const railRef = ref(null)
@@ -51,7 +60,7 @@ function updateControls() {
 function scrollRail(direction) {
   const rail = railRef.value
   if (!rail) return
-  rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth' })
+  rail.scrollBy({left: direction * Math.max(rail.clientWidth * 0.82, 220), behavior: 'smooth'})
 }
 
 async function resetRailPosition() {
@@ -59,7 +68,7 @@ async function resetRailPosition() {
   await nextTick()
   const rail = railRef.value
   if (!rail) return
-  rail.scrollTo({ left: 0, behavior: 'auto' })
+  rail.scrollTo({left: 0, behavior: 'auto'})
   requestAnimationFrame(() => requestAnimationFrame(updateControls))
 }
 
@@ -84,7 +93,12 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
   min-width: 0;
   max-width: 100%;
 }
-.rail-shell { position: relative; overflow: hidden; }
+
+.rail-shell {
+  position: relative;
+  overflow: hidden;
+}
+
 .content-rail {
   width: 100%;
   min-width: 0;
@@ -92,6 +106,7 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
   grid-auto-columns: clamp(160px, 42%, 210px);
   overscroll-behavior-inline: contain;
 }
+
 .rail-control {
   position: absolute;
   top: 42%;
@@ -114,16 +129,43 @@ onBeforeUnmount(() => resizeObserver?.disconnect())
   transform: translateY(-50%) scale(.94);
   transition: opacity 160ms ease, transform 160ms ease, background 160ms ease;
 }
+
 .rail-shell:hover .rail-control {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
   transform: translateY(-50%) scale(1);
 }
-.rail-shell:hover .rail-control:hover { background: var(--surface-primary); transform: translateY(-50%) scale(1.06); }
-.rail-control:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; }
-.rail-control span { font-size: 38px; font-weight: 300; line-height: 1; transform: translateY(-2px); }
-.rail-control-left { left: 8px; }
-.rail-control-right { right: 8px; }
-@media (max-width: 768px) { .rail-control { width: 36px; height: 58px; } }
+
+.rail-shell:hover .rail-control:hover {
+  background: var(--surface-primary);
+  transform: translateY(-50%) scale(1.06);
+}
+
+.rail-control:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 3px;
+}
+
+.rail-control span {
+  font-size: 38px;
+  font-weight: 300;
+  line-height: 1;
+  transform: translateY(-2px);
+}
+
+.rail-control-left {
+  left: 8px;
+}
+
+.rail-control-right {
+  right: 8px;
+}
+
+@media (max-width: 768px) {
+  .rail-control {
+    width: 36px;
+    height: 58px;
+  }
+}
 </style>

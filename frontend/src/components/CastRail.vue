@@ -1,12 +1,12 @@
 <template>
   <section class="space-y-3">
-    <RouterLink 
-      :to="`/movies/${movieId}/cast`"
-      class="title-link flex items-center gap-3 px-1 mb-2 select-none group no-underline"
+    <RouterLink
+        :to="`/movies/${movieId}/cast`"
+        class="title-link flex items-center gap-3 px-1 mb-2 select-none group no-underline"
     >
       <h2 class="text-base md:text-lg font-bold text-[var(--text-primary)] tracking-tight">演职人员</h2>
-      <span 
-        class="cast-section-arrow text-lg md:text-xl font-light text-[var(--text-muted)] opacity-60 select-none"
+      <span
+          class="cast-section-arrow text-lg md:text-xl font-light text-[var(--text-muted)] opacity-60 select-none"
       >
         &gt;
       </span>
@@ -14,26 +14,28 @@
 
     <div class="cast-rail">
       <component
-        :is="personLink(person) ? RouterLink : 'div'"
-        v-for="person in cast"
-        :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
-        :to="personLink(person)"
-        class="cast-card"
-        @mouseenter="schedulePrefetch(person)"
-        @mouseleave="cancelPrefetch"
-        @focus="prefetchNow(person)"
+          :is="personLink(person) ? RouterLink : 'div'"
+          v-for="person in cast"
+          :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
+          :to="personLink(person)"
+          class="cast-card"
+          @mouseenter="schedulePrefetch(person)"
+          @mouseleave="cancelPrefetch"
+          @focus="prefetchNow(person)"
       >
         <div class="avatar-wrapper">
-          <img 
-            v-if="person.profileUrl" 
-            :src="person.profileUrl" 
-            :alt="person.name" 
-            class="avatar-img"
-            loading="lazy" 
+          <img
+              v-if="person.profileUrl"
+              :src="person.profileUrl"
+              :alt="person.name"
+              class="avatar-img"
+              loading="lazy"
           />
           <div v-else class="avatar-placeholder">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 opacity-60">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                 stroke="currentColor" class="w-8 h-8 opacity-60">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
             </svg>
           </div>
         </div>
@@ -49,9 +51,9 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount } from 'vue'
-import { RouterLink } from 'vue-router'
-import { prefetchPersonDetail } from '@/api/person'
+import {onBeforeUnmount} from 'vue'
+import {RouterLink} from 'vue-router'
+import {prefetchPersonDetail} from '@/api/person'
 
 let prefetchTimer
 

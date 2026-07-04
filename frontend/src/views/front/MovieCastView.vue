@@ -1,7 +1,9 @@
 <template>
   <section class="cast-view-container space-y-4">
     <div>
-      <a :href="'/movies/' + id" class="back-link inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-85 no-underline select-none transition" @click.prevent="goBack">
+      <a :href="'/movies/' + id"
+         class="back-link inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--text-primary)] hover:opacity-85 no-underline select-none transition"
+         @click.prevent="goBack">
         <span class="text-base font-bold">&lt;</span>
         <span>返回</span>
       </a>
@@ -19,23 +21,25 @@
 
       <div v-if="castAndCrew && castAndCrew.length" class="cast-grid">
         <component
-          :is="personLink(person) ? RouterLink : 'div'"
-          v-for="person in castAndCrew"
-          :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
-          :to="personLink(person)"
-          class="cast-card"
+            :is="personLink(person) ? RouterLink : 'div'"
+            v-for="person in castAndCrew"
+            :key="person.personType + '-' + person.id + '-' + person.name + '-' + person.roleName"
+            :to="personLink(person)"
+            class="cast-card"
         >
           <div class="avatar-wrapper">
-            <img 
-              v-if="person.profileUrl" 
-              :src="person.profileUrl" 
-              :alt="person.name" 
-              class="avatar-img"
-              loading="lazy" 
+            <img
+                v-if="person.profileUrl"
+                :src="person.profileUrl"
+                :alt="person.name"
+                class="avatar-img"
+                loading="lazy"
             />
             <div v-else class="avatar-placeholder">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 opacity-60">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                   stroke="currentColor" class="w-12 h-12 opacity-60">
+                <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
               </svg>
             </div>
           </div>
@@ -47,7 +51,7 @@
           </div>
         </component>
       </div>
-      
+
       <div v-else class="text-center py-12 text-[var(--text-muted)] text-sm">
         暂无演职人员信息
       </div>
@@ -55,16 +59,17 @@
 
     <div v-else-if="loading" class="text-center py-20 text-[var(--text-muted)] text-sm">正在加载演职人员信息...</div>
     <div v-else class="surface-card cast-error-state">
-      <h2>无法加载演职人员</h2><p>{{ errorMessage }}</p>
+      <h2>无法加载演职人员</h2>
+      <p>{{ errorMessage }}</p>
       <button class="pill-button is-active" @click="$router.go(0)">重新加载</button>
     </div>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
-import { getMovieDetail } from '@/api/movie'
+import {computed, onMounted, ref} from 'vue'
+import {RouterLink, useRouter} from 'vue-router'
+import {getMovieDetail} from '@/api/movie'
 
 
 const props = defineProps({
@@ -248,12 +253,14 @@ onMounted(async () => {
     height: 120px;
   }
 }
+
 @media (max-width: 992px) {
   .avatar-wrapper {
     width: 100px;
     height: 100px;
   }
 }
+
 @media (max-width: 576px) {
   .avatar-wrapper {
     width: 80px;
@@ -311,5 +318,19 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cast-error-state{display:grid;justify-items:start;gap:10px;padding:32px}.cast-error-state h2,.cast-error-state p{margin:0}.cast-error-state p{color:var(--text-secondary)}
+
+.cast-error-state {
+  display: grid;
+  justify-items: start;
+  gap: 10px;
+  padding: 32px
+}
+
+.cast-error-state h2, .cast-error-state p {
+  margin: 0
+}
+
+.cast-error-state p {
+  color: var(--text-secondary)
+}
 </style>

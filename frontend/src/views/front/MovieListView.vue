@@ -5,7 +5,8 @@
       <h1 class="mt-3 text-3xl font-semibold md:text-5xl">影视库</h1>
       <div class="filters">
         <div class="filter-row search-row">
-          <el-input v-model="query.keyword" clearable placeholder="搜索影片标题" class="filter-input" @keyup.enter="search" />
+          <el-input v-model="query.keyword" clearable placeholder="搜索影片标题" class="filter-input"
+                    @keyup.enter="search"/>
           <button class="pill-button is-active" @click="search">查询</button>
           <button class="pill-button" @click="reset">重置</button>
         </div>
@@ -13,25 +14,26 @@
         <div class="filter-row category-row">
           <span class="filter-label">类型</span>
           <div class="category-area">
-            <div ref="categoryViewport" class="category-viewport" :class="{ 'is-expanded': categoryExpanded }" :style="categoryViewportStyle">
+            <div ref="categoryViewport" class="category-viewport" :class="{ 'is-expanded': categoryExpanded }"
+                 :style="categoryViewportStyle">
               <div ref="categoryGroup" class="pill-group">
                 <button
-                  v-for="category in options.categories"
-                  :key="category"
-                  class="pill-button"
-                  :class="{ 'is-active': query.categories.includes(category) }"
-                  @click="toggleCategory(category)"
+                    v-for="category in options.categories"
+                    :key="category"
+                    class="pill-button"
+                    :class="{ 'is-active': query.categories.includes(category) }"
+                    @click="toggleCategory(category)"
                 >
                   {{ category }}
                 </button>
               </div>
             </div>
             <button
-              v-if="categoryOverflow"
-              class="category-toggle"
-              type="button"
-              :aria-expanded="categoryExpanded"
-              @click="categoryExpanded = !categoryExpanded"
+                v-if="categoryOverflow"
+                class="category-toggle"
+                type="button"
+                :aria-expanded="categoryExpanded"
+                @click="categoryExpanded = !categoryExpanded"
             >
               {{ categoryExpanded ? '收起' : '展开' }}
               <span class="toggle-arrow" :class="{ 'is-expanded': categoryExpanded }">⌄</span>
@@ -43,19 +45,19 @@
           <div class="filter-field">
             <span class="filter-label">地区</span>
             <el-select v-model="query.region" clearable filterable placeholder="全部地区" @change="applyFilter">
-              <el-option v-for="region in options.regions" :key="region" :label="region" :value="region" />
+              <el-option v-for="region in options.regions" :key="region" :label="region" :value="region"/>
             </el-select>
           </div>
           <div class="filter-field">
             <span class="filter-label">年份</span>
             <el-select v-model="query.year" clearable filterable placeholder="全部年份" @change="applyFilter">
-              <el-option v-for="year in options.years" :key="year" :label="String(year)" :value="year" />
+              <el-option v-for="year in options.years" :key="year" :label="String(year)" :value="year"/>
             </el-select>
           </div>
           <div class="filter-field">
             <span class="filter-label">排序</span>
             <el-select v-model="query.sort" placeholder="排序方式" @change="applyFilter">
-              <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value" />
+              <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value"/>
             </el-select>
           </div>
         </div>
@@ -63,28 +65,28 @@
     </div>
 
     <div v-loading="loading">
-      <MovieList :movies="movies" />
-      <el-empty v-if="!loading && !movies.length" description="没有符合条件的影片" />
+      <MovieList :movies="movies"/>
+      <el-empty v-if="!loading && !movies.length" description="没有符合条件的影片"/>
     </div>
     <div class="pager-container">
       <el-pagination
-        v-model:current-page="query.pageNum"
-        :page-size="query.pageSize"
-        :total="total"
-        layout="prev, pager, next"
-        prev-text="上一页"
-        next-text="下一页"
-        @current-change="goPage"
+          v-model:current-page="query.pageNum"
+          :page-size="query.pageSize"
+          :total="total"
+          layout="prev, pager, next"
+          prev-text="上一页"
+          next-text="下一页"
+          @current-change="goPage"
       />
       <div class="pager-info" v-if="total > query.pageSize">
         共 {{ Math.ceil(total / query.pageSize) }} 页 / {{ total }} 个，跳至
         <input
-          type="number"
-          v-model.number="jumperPage"
-          min="1"
-          :max="Math.ceil(total / query.pageSize)"
-          class="pager-jumper-input"
-          @keyup.enter="handleJumper"
+            type="number"
+            v-model.number="jumperPage"
+            min="1"
+            :max="Math.ceil(total / query.pageSize)"
+            class="pager-jumper-input"
+            @keyup.enter="handleJumper"
         />
         页
       </div>
@@ -93,14 +95,14 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
-import { getMovieFilters, getMoviePage } from '@/api/movie'
+import {computed, nextTick, onBeforeUnmount, onMounted, reactive, ref} from 'vue'
+import {getMovieFilters, getMoviePage} from '@/api/movie'
 import MovieList from '@/components/MovieList.vue'
 
 const movies = ref([])
 const total = ref(0)
 const loading = ref(false)
-const options = reactive({ categories: [], regions: [], years: [] })
+const options = reactive({categories: [], regions: [], years: []})
 const query = reactive({
   keyword: '',
   categories: [],
@@ -119,17 +121,17 @@ const collapsedCategoryHeight = ref(0)
 let categoryResizeObserver
 
 const sortOptions = [
-  { value: 'hot', label: '热门优先' },
-  { value: 'rating-desc', label: '评分从高到低' },
-  { value: 'rating-asc', label: '评分从低到高' },
-  { value: 'favorite-desc', label: '收藏最多' },
-  { value: 'release-desc', label: '上映时间从新到旧' },
-  { value: 'release-asc', label: '上映时间从旧到新' }
+  {value: 'hot', label: '热门优先'},
+  {value: 'rating-desc', label: '评分从高到低'},
+  {value: 'rating-asc', label: '评分从低到高'},
+  {value: 'favorite-desc', label: '收藏最多'},
+  {value: 'release-desc', label: '上映时间从新到旧'},
+  {value: 'release-asc', label: '上映时间从旧到新'}
 ]
 
 const categoryViewportStyle = computed(() => {
   if (categoryExpanded.value || !categoryOverflow.value) return undefined
-  return { maxHeight: collapsedCategoryHeight.value + 'px' }
+  return {maxHeight: collapsedCategoryHeight.value + 'px'}
 })
 
 function measureCategoryRows() {
@@ -148,7 +150,7 @@ function measureCategoryRows() {
 }
 
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  window.scrollTo({top: 0, behavior: 'smooth'})
 }
 
 async function load() {
@@ -193,6 +195,7 @@ function goPage(page) {
 }
 
 const jumperPage = ref('')
+
 function handleJumper() {
   const p = parseInt(jumperPage.value, 10)
   const maxPage = Math.ceil(total.value / query.pageSize)
@@ -231,15 +234,59 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
 </script>
 
 <style scoped>
-.filters { margin-top: 24px; display: flex; flex-direction: column; gap: 16px; }
-.filter-row { display: flex; align-items: flex-start; gap: 12px; }
-.search-row { align-items: center; flex-wrap: wrap; }
-.filter-input { flex: 1; min-width: 200px; max-width: 360px; }
-.filter-label { flex: 0 0 36px; padding-top: 8px; font-size: 0.82rem; font-weight: 650; color: var(--text-secondary); white-space: nowrap; }
-.category-area { min-width: 0; flex: 1; }
-.category-viewport { overflow: hidden; transition: max-height 0.25s ease; }
-.category-viewport.is-expanded { max-height: 500px; }
-.pill-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.filters {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.search-row {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-input {
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.filter-label {
+  flex: 0 0 36px;
+  padding-top: 8px;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.category-area {
+  min-width: 0;
+  flex: 1;
+}
+
+.category-viewport {
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.category-viewport.is-expanded {
+  max-height: 500px;
+}
+
+.pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .category-toggle {
   display: inline-flex;
   align-items: center;
@@ -253,12 +300,39 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
   cursor: pointer;
   transition: color 0.2s ease;
 }
-.category-toggle:hover { color: var(--text-primary); }
-.toggle-arrow { display: inline-block; line-height: 1; transition: transform 0.2s ease; }
-.toggle-arrow.is-expanded { transform: rotate(180deg); }
-.filter-toolbar { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px 32px; }
-.filter-field { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
-.filter-field .el-select { flex: 1; min-width: 0; }
+
+.category-toggle:hover {
+  color: var(--text-primary);
+}
+
+.toggle-arrow {
+  display: inline-block;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.toggle-arrow.is-expanded {
+  transform: rotate(180deg);
+}
+
+.filter-toolbar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 32px;
+}
+
+.filter-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.filter-field .el-select {
+  flex: 1;
+  min-width: 0;
+}
+
 .pager-container {
   display: flex;
   align-items: center;
@@ -267,6 +341,7 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
   margin-top: 24px;
   flex-wrap: wrap;
 }
+
 .pager-info {
   font-size: 0.88rem;
   color: var(--text-secondary);
@@ -274,6 +349,7 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
   align-items: center;
   gap: 4px;
 }
+
 .pager-jumper-input {
   width: 54px;
   height: 30px;
@@ -289,12 +365,14 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
   -moz-appearance: textfield;
   appearance: textfield;
 }
+
 .pager-jumper-input::-webkit-outer-spin-button,
 .pager-jumper-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   appearance: none;
   margin: 0;
 }
+
 .pager-jumper-input:focus {
   border-color: var(--text-primary);
   background-color: var(--bg-secondary);
@@ -350,9 +428,22 @@ onBeforeUnmount(() => categoryResizeObserver?.disconnect())
 }
 
 @media (max-width: 600px) {
-  .filter-input { width: 100%; max-width: 100%; }
-  .category-row { align-items: flex-start; }
-  .filter-toolbar { grid-template-columns: 1fr; gap: 12px; }
-  .filter-field { width: 100%; }
+  .filter-input {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .category-row {
+    align-items: flex-start;
+  }
+
+  .filter-toolbar {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .filter-field {
+    width: 100%;
+  }
 }
 </style>

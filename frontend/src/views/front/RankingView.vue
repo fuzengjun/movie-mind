@@ -28,23 +28,23 @@
 
     <div class="pager-container" v-if="!errorMessage && total > pageSize">
       <el-pagination
-        v-model:current-page="pageNum"
-        :page-size="pageSize"
-        :total="total"
-        layout="prev, pager, next"
-        prev-text="上一页"
-        next-text="下一页"
-        @current-change="goPage"
+          v-model:current-page="pageNum"
+          :page-size="pageSize"
+          :total="total"
+          layout="prev, pager, next"
+          prev-text="上一页"
+          next-text="下一页"
+          @current-change="goPage"
       />
       <div class="pager-info">
         共 {{ Math.ceil(total / pageSize) }} 页 / {{ total }} 个，跳至
         <input
-          type="number"
-          v-model.number="jumperPage"
-          min="1"
-          :max="Math.ceil(total / pageSize)"
-          class="pager-jumper-input"
-          @keyup.enter="handleJumper"
+            type="number"
+            v-model.number="jumperPage"
+            min="1"
+            :max="Math.ceil(total / pageSize)"
+            class="pager-jumper-input"
+            @keyup.enter="handleJumper"
         />
         页
       </div>
@@ -94,6 +94,7 @@ function goPage(page) {
 }
 
 const jumperPage = ref('')
+
 function handleJumper() {
   const p = parseInt(jumperPage.value, 10)
   const maxPage = Math.ceil(total.value / pageSize)

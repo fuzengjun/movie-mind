@@ -21,19 +21,19 @@
 
       <div v-if="movies.length" class="works-grid">
         <RouterLink
-          v-for="movie in movies"
-          :key="movie.id"
-          :to="`/movies/${movie.id}`"
-          class="works-movie-link"
+            v-for="movie in movies"
+            :key="movie.id"
+            :to="`/movies/${movie.id}`"
+            class="works-movie-link"
         >
           <article class="works-movie-card">
             <div class="works-poster poster-shell">
               <img
-                v-if="movie.posterUrl"
-                :src="movie.posterUrl"
-                :alt="movie.title"
-                class="poster-image"
-                loading="lazy"
+                  v-if="movie.posterUrl"
+                  :src="movie.posterUrl"
+                  :alt="movie.title"
+                  class="poster-image"
+                  loading="lazy"
               />
               <div v-else class="works-poster-fallback">{{ movie.title?.slice(0, 1) || '?' }}</div>
             </div>
@@ -53,9 +53,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getPersonDetail } from '@/api/person'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {getPersonDetail} from '@/api/person'
 
 const route = useRoute()
 const router = useRouter()
@@ -81,7 +81,7 @@ function goBack() {
   }
   router.push({
     name: 'person-detail',
-    params: { type: route.params.type, id: route.params.id }
+    params: {type: route.params.type, id: route.params.id}
   })
 }
 
@@ -100,8 +100,8 @@ async function loadPerson() {
 }
 
 watch(
-  () => [route.params.type, route.params.id, route.params.sectionKey],
-  () => loadPerson()
+    () => [route.params.type, route.params.id, route.params.sectionKey],
+    () => loadPerson()
 )
 
 onMounted(() => loadPerson())

@@ -21,7 +21,7 @@
         <div class="person-hero-overlay"></div>
         <div class="person-hero-content">
           <div class="person-avatar-shell">
-            <img v-if="person.profileUrl" :src="person.profileUrl" :alt="person.name" class="person-avatar" />
+            <img v-if="person.profileUrl" :src="person.profileUrl" :alt="person.name" class="person-avatar"/>
             <div v-else class="person-avatar-fallback">{{ initials }}</div>
           </div>
 
@@ -60,7 +60,7 @@
       <section class="person-sections">
         <div v-for="section in person.sections || []" :key="section.key" class="person-section">
           <RouterLink
-            :to="{
+              :to="{
               name: 'person-works',
               params: {
                 type: person.type || route.params.type,
@@ -68,7 +68,7 @@
                 sectionKey: section.key
               }
             }"
-            class="person-section-head"
+              class="person-section-head"
           >
             <h2 class="person-section-title">{{ sectionTitle(section) }}</h2>
             <span class="person-section-arrow">&gt;</span>
@@ -76,14 +76,15 @@
 
           <div v-if="section.movies && section.movies.length" class="content-rail">
             <RouterLink
-              v-for="movie in section.movies"
-              :key="section.key + '-' + movie.id"
-              :to="`/movies/${movie.id}`"
-              class="person-movie-link"
+                v-for="movie in section.movies"
+                :key="section.key + '-' + movie.id"
+                :to="`/movies/${movie.id}`"
+                class="person-movie-link"
             >
               <article class="person-movie-card">
                 <div class="person-movie-poster poster-shell">
-                  <img v-if="movie.posterUrl" :src="movie.posterUrl" :alt="movie.title" class="poster-image" loading="lazy" />
+                  <img v-if="movie.posterUrl" :src="movie.posterUrl" :alt="movie.title" class="poster-image"
+                       loading="lazy"/>
                   <div v-else class="person-movie-fallback">{{ movie.title?.slice(0, 1) || '?' }}</div>
                 </div>
                 <div class="person-movie-copy">
@@ -109,9 +110,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { getPersonDetail } from '@/api/person'
+import {computed, onMounted, ref, watch} from 'vue'
+import {useRoute, useRouter} from 'vue-router'
+import {getPersonDetail} from '@/api/person'
 
 const route = useRoute()
 const router = useRouter()
@@ -170,10 +171,10 @@ async function loadPerson() {
 }
 
 watch(
-  () => [route.params.type, route.params.id],
-  () => {
-    loadPerson()
-  }
+    () => [route.params.type, route.params.id],
+    () => {
+      loadPerson()
+    }
 )
 
 onMounted(() => {
@@ -244,15 +245,13 @@ onMounted(() => {
 .person-hero-overlay {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 219, 204, 0.6), transparent 30%),
-    linear-gradient(90deg, rgba(236, 235, 239, 0.96) 0%, rgba(249, 219, 209, 0.92) 50%, rgba(235, 235, 239, 0.96) 100%);
+  background: radial-gradient(circle at 32% 26%, rgba(255, 219, 204, 0.6), transparent 30%),
+  linear-gradient(90deg, rgba(236, 235, 239, 0.96) 0%, rgba(249, 219, 209, 0.92) 50%, rgba(235, 235, 239, 0.96) 100%);
 }
 
 html[data-theme='dark'] .person-hero-overlay {
-  background:
-    radial-gradient(circle at 32% 26%, rgba(255, 210, 188, 0.18), transparent 28%),
-    linear-gradient(90deg, rgba(26, 26, 28, 0.96) 0%, rgba(58, 42, 38, 0.9) 50%, rgba(22, 22, 24, 0.96) 100%);
+  background: radial-gradient(circle at 32% 26%, rgba(255, 210, 188, 0.18), transparent 28%),
+  linear-gradient(90deg, rgba(26, 26, 28, 0.96) 0%, rgba(58, 42, 38, 0.9) 50%, rgba(22, 22, 24, 0.96) 100%);
 }
 
 .person-hero-content {
