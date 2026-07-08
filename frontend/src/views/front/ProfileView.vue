@@ -53,7 +53,7 @@
             <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">个人资料</h2>
             <p class="text-sm text-[var(--text-secondary)] mt-1">查看和管理您的账号基本信息。</p>
           </div>
-          <el-form label-position="top" class="profile-form">
+          <el-form label-position="top" class="profile-form" @submit.prevent="saveProfile">
             <el-form-item label="用户名 (不可修改)">
               <el-input :model-value="form.username" disabled />
             </el-form-item>
@@ -63,7 +63,7 @@
             <el-form-item label="邮箱">
               <el-input v-model="form.email" placeholder="请输入您的电子邮箱" />
             </el-form-item>
-            <button class="pill-button is-active mt-4" @click="saveProfile">保存资料</button>
+            <button class="pill-button is-active mt-4" type="submit">保存资料</button>
           </el-form>
         </div>
 
@@ -73,7 +73,7 @@
             <h2 class="text-2xl font-bold tracking-tight text-[var(--text-primary)]">安全与密码</h2>
             <p class="text-sm text-[var(--text-secondary)] mt-1">建议定期修改密码以确保您的账号安全。</p>
           </div>
-          <el-form label-position="top" class="profile-form">
+          <el-form label-position="top" class="profile-form" @submit.prevent="changePassword">
             <el-form-item label="原密码">
               <el-input v-model="password.oldPassword" type="password" show-password placeholder="请输入原密码" />
             </el-form-item>
@@ -83,7 +83,7 @@
             <el-form-item label="确认新密码">
               <el-input v-model="password.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
             </el-form-item>
-            <button class="pill-button is-active mt-4" @click="changePassword">修改密码</button>
+            <button class="pill-button is-active mt-4" type="submit">修改密码</button>
           </el-form>
         </div>
 
@@ -214,9 +214,13 @@ const currentTabLabel = computed(() => {
 })
 
 async function init() {
-  const r = await getProfile()
-  Object.assign(form, r.data)
-  store.setProfile({ ...store.profile, ...r.data })
+  try {
+    const r = await getProfile()
+    Object.assign(form, r.data)
+    store.setProfile({ ...store.profile, ...r.data })
+  } catch (error) {
+    // 拦截器中已统一处理错误弹出
+  }
 }
 
 async function load(name) {
@@ -248,17 +252,63 @@ async function changeSection(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
 async function saveProfile() {
-  const r = await updateProfile(form)
-  store.setProfile({ ...store.profile, ...r.data })
-  ElMessage.success('资料已保存')
+  form.nickname = (form.nickname || '').trim()
+  form.email = (form.email || '').trim()
+
+  if (!form.nickname) {
+    ElMessage.warning('昵称不能为空')
+    return
+  }
+  if (form.email && !emailPattern.test(form.email)) {
+    ElMessage.warning('请输入正确的邮箱地址')
+    return
+  }
+
+  try {
+    const r = await updateProfile(form)
+    store.setProfile({ ...store.profile, ...r.data })
+    ElMessage.success('资料已保存')
+  } catch (error) {
+    // 拦截器已展示异常信息
+  }
 }
 
 async function changePassword() {
-  await updatePassword(password)
-  store.logout()
-  ElMessage.success('密码已修改，请重新登录')
-  router.push('/login')
+  if (!password.oldPassword) {
+    ElMessage.warning('请输入原密码')
+    return
+  }
+  if (!password.newPassword) {
+    ElMessage.warning('请输入新密码')
+    return
+  }
+  if (password.newPassword.length < 6) {
+    ElMessage.warning('新密码长度不能少于 6 位')
+    return
+  }
+  if (password.newPassword === password.oldPassword) {
+    ElMessage.warning('新密码不能与原密码相同')
+    return
+  }
+  if (password.newPassword !== password.confirmPassword) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+
+  try {
+    await updatePassword(password)
+    store.logout()
+    ElMessage.success('密码已修改，请重新登录')
+    router.push('/login')
+  } catch (error) {
+    // 拦截器已展示异常信息，清空密码框以便重新输入
+    password.oldPassword = ''
+    password.newPassword = ''
+    password.confirmPassword = ''
+  }
 }
 
 function format(value) {
